@@ -1,25 +1,25 @@
 # Core Packages
-tensorflow==2.16.1          # OR tensorflow-gpu is now included in main package
-librosa==0.10.1             # Audioprocessing (Spektrogrammes, Onset Detection)
-pretty_midi==0.2.10         # MIDI-Data processing
-music21==9.1.0              # Sheetgeneration (MusicXML, MuseScore-Integration)
+tensorflow==2.10.0          # Letzte stabile Version für Python 3.9
+librosa==0.9.2              # Audioverarbeitung (kompatibel mit Py3.9)
+music21==7.3.3              # Stabil für Py3.9 (nicht Version 9.x!)
+pretty_midi==0.2.9          # MIDI-Verarbeitung
 
-# Dataprocessing and visualization
-numpy==2.2
-pandas==2.2.3
-matplotlib==3.8.3           # Plots for Spektrogramm/Metrics
-seaborn==0.13.2             # statistic visualization
+# Datenverarbeitung & Visualisierung
+numpy==1.21.6               # Wichtig für TensorFlow 2.10
+pandas==1.5.2
+matplotlib==3.5.3
+seaborn==0.12.1
 
-# Preprocessing & Utils
-scipy==1.13.0               # Signalprocessing
-scikit-learn==1.4.2         # Metrics and datasplitting
-tqdm==4.66.2                # progressbar
-python-dotenv==1.0.1        # environment variables (.env)
+# Utils & Preprocessing
+scipy==1.7.3                # Kompatibel mit librosa 0.9.2
+scikit-learn==1.0.2
+tqdm==4.64.1
+python-dotenv==0.21.0
 
 # Experiment-Tracking
-mlflow==2.11.3              # Modell-Logging (optional)
-tensorboard==2.16.2         # Training visualization
+mlflow==1.30.0              # Letzte Version für Py3.9
+tensorboard==2.10.1
 
-# Development & Testing
-jupyterlab==4.1.6           # Notebooks
-pytest==8.1.1               # Unit-Tests
+# Development
+jupyterlab==3.5.0
+pytest==7.2.0
