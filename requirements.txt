@@ -6,6 +6,12 @@ basic-pitch==0.4.0           # Modell Architecture
 music21==9.7.1               # Also automatically installs alot of dependencys needed for processing
 # pretty_midi already installed as dependency, version: 0.2.10
 
+# To add for preprocessing::
+# tensorflow==2.15.0
+# spleeter
+# ffmpeg-python
+# noisereduce
+
 #Using conda to install both packages the following dependencys will be installed:
 # Package                      Version
 # ---------------------------- -----------
