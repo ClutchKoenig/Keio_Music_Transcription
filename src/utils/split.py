@@ -1,14 +1,25 @@
-import sys
 import os
+import argparse
+
+NB_STEMS_DEFAULT = 5
+PROP_DECREASE_DEFAULT = 0.5
+RMS_DEFAULT = 0.005
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Usage: python test_spleeter.py <filename>")
-        sys.exit(1)
-    file = sys.argv[1]
-    if not os.path.exists(file):
-        print(f"File '{file}' does not exist in input directory.")
-        sys.exit(1)
+    parser = argparse.ArgumentParser(description="Split audio into stems using Spleeter.")
+    parser.add_argument("file", help="Path to input audio file")
+    parser.add_argument("--nb_stems", type=int, default=NB_STEMS_DEFAULT, 
+                        help="Number of stems to separate (2, 4, or 5)")
+    parser.add_argument("--prop_decrease", type=float, default=PROP_DECREASE_DEFAULT, 
+                        help="Noise reduction strength (0 to 1)")
+    parser.add_argument("--rms", type=float, default=RMS_DEFAULT, 
+                        help="Minimum RMS to keep a stem")
+
+    args = parser.parse_args()
+
+    if not os.path.exists(args.file):
+        print(f"Error: file '{args.file}' does not exist.")
+        exit(1)
 
 from spleeter.separator import Separator
 import numpy as np
@@ -16,7 +27,12 @@ import librosa
 import noisereduce as nr
 import soundfile as sf
 
-def split_audio(file, nb_stems=5, prop_decrease=0.5):
+def split_audio(
+    file, 
+    nb_stems=NB_STEMS_DEFAULT, 
+    prop_decrease=PROP_DECREASE_DEFAULT, 
+    rms=RMS_DEFAULT,
+):
     # Load the audio file
     y_mono, sr = librosa.load(file, sr=44100, mono=True)
 
@@ -39,15 +55,32 @@ def split_audio(file, nb_stems=5, prop_decrease=0.5):
     # bass = prediction['bass']
     # other = prediction['other']
 
+    # Remove silent stems based on RMS threshold
+    stems_to_delete = []
+    for stem in prediction:
+        # Convert stereo to mono
+        prediction[stem] = np.mean(prediction[stem], axis=1)
+
+        rms_values = librosa.feature.rms(y=prediction[stem])
+        if np.mean(rms_values) < rms:
+            stems_to_delete.append(stem)
+
+    # Delete stems that are below the RMS threshold
+    for stem in stems_to_delete:
+        del prediction[stem]
+
     return prediction
 
 if __name__ == "__main__":
-    prediction = split_audio(file)
-    output_dir = 'output'
+    prediction = split_audio(args.file, args.nb_stems, args.prop_decrease, args.rms)
+
+    filename = os.path.splitext(os.path.basename(args.file))[0]
+    output_dir = f'output/{filename}'
     os.makedirs(output_dir, exist_ok=True)
+
     for stem, audio in prediction.items():
-        output_file = os.path.join(output_dir, f"{os.path.splitext(file)[0]}_{stem}.wav")
+        output_file = os.path.join(output_dir, f"{stem}.wav")
         sf.write(output_file, audio, 44100)
         print(f"Saved {stem} stem to {output_file}")
+
     print("Audio splitting completed.")
-    print("Output files are stored in the 'output' directory.")
