@@ -28,7 +28,7 @@ class audio_conversion():
                          model_or_model_path=ICASSP_2022_MODEL_PATH)
         
 
-modell = audio_conversion(song='OMORI_Final-Duet')
+modell = audio_conversion(song='OMORI_cleaner')
 modell.conversion_1()
         
 
