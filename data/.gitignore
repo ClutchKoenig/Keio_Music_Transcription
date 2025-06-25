@@ -1,0 +1,10 @@
+#ignore all data files
+
+data/*
+#except the .gitignore file itself  
+!data/.gitignore
+#and the model_midi folder  
+!data/model_midi/
+#model_midi folder contents
+data/model_midi/*
+

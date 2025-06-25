@@ -1,0 +1,8 @@
+# ignore all files in the output directory
+output/*
+# except the .gitignore file itself
+!output/.gitignore
+#and the model_midi folder
+!output/model_midi/
+#model_midi folder contents
+output/model_midi/*
