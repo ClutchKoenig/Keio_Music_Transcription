@@ -14,37 +14,42 @@ def f1_score(precision: float, recall: float) -> float:
     if precision + recall == 0:
         return 0.0
     return 2 * (precision * recall) / (precision + recall)
-def f1_score_with_overlap(midi_path_pred: str, midi_ground_truth_path: str, tolerance:float=0.05, min_overlap:float=0.5) -> float:
-    """
-    Calculate the F1 score with overlap tolerance for MIDI files.
 
-    Args:
-        midi_path_pred (str): Path to the predicted MIDI file.
-        midi_ground_truth_path (str): Path to the ground truth MIDI file.
-        tolerance (float): Tolerance for overlap in seconds.
+def f1_score_with_overlap(predicted_notes: dict, ground_truth_notes: dict, tolerance:float=0.05, min_overlap:float=0.5) -> dict:
+    """    
+        Calculate the F1 score with overlap tolerance for predicted and ground truth notes.
+        This function compares predicted notes with ground truth notes, allowing for a specified tolerance in start and end times,
+        and a minimum overlap duration to consider a note as a true positive.
+
+        Args:
+
+        predicted_notes (dict): Dictionary of predicted notes with keys 'pitch', 'start', 'end', and 'instrument'.
+        ground_truth_notes (dict): Dictionary of ground truth notes with keys 'pitch', 'start', 'end', and 'instrument'.
+        tolerance (float): Tolerance for overlap in seconds.        
         min_overlap (float): Minimum overlap required to consider a note as true positive.
 
     Returns:
-        float: The F1 score with overlap tolerance.
+        dict: A dictionary containing the F1 score, precision, and recall.
     """
+
     try:
-        predicted_data = ml.load_midi(midi_path_pred)
-        ground_truth_data = ml.load_midi(midi_ground_truth_path)
-
-        predicted_notes = ml.extract_notes(predicted_data)
-        ground_truth_notes = ml.extract_notes(ground_truth_data)
-
-        if not predicted_notes or not ground_truth_notes:
-            raise ValueError("No notes found in one of the MIDI files.")
-
+        # Initialize counters for true positives, false positives, and false negatives
         true_positives = 0
         false_positives = 0
         false_negatives = 0
+        # Iterate through predicted instruments
+        # and match with ground truth instruments
 
+        # Iterate through predicted notes and match with ground truth notes
         for pred_note in predicted_notes:
             matched = False
             for gt_note in ground_truth_notes:
-                if abs(pred_note.start - gt_note.start) <= tolerance and abs(pred_note.end - gt_note.end) <= tolerance:
+                if (
+                    pred_note['pitch'] == gt_note['pitch'] and
+                    abs(pred_note['start'] - gt_note['start']) <= tolerance and
+                    abs(pred_note['end'] - gt_note['end']) <= tolerance and
+                    pred_note['instrument'] in ground_truth_instruments
+                ):
                     overlap = min(pred_note.end, gt_note.end) - max(pred_note.start, gt_note.start)
                     if overlap >= min_overlap:
                         true_positives += 1
@@ -58,58 +63,137 @@ def f1_score_with_overlap(midi_path_pred: str, midi_ground_truth_path: str, tole
         precision = true_positives / (true_positives + false_positives) if (true_positives + false_positives) > 0 else 0.0
         recall = true_positives / (true_positives + false_negatives) if (true_positives + false_negatives) > 0 else 0.0
         f1 = f1_score(precision, recall)
-
-        return f1
+        if f1 is None:
+            raise ValueError("F1 score could not be calculated.")
+        
+        return dict(
+            f1_score=f1,
+            precision=precision,
+            recall=recall
+        )
+    
     except Exception as e:
-        raise ValueError(f"Error calculating F1 score with overlap: {e}")  
+        raise ValueError(f"Error calculating F1 score with overlap and instruments: {e}")
 
 
-def evaluate_midi(midi_path_pred: str, midi_ground_truth_path:str) -> dict:
+def evaluate_midi_per_instrument(midi_path_pred: str, midi_path_ground_truth: str) -> dict:
     """
-    Evaluate a MIDI file against ground truth data.
+    Evaluate a MIDI file against ground truth data, considering instruments.
 
     Args:
-        midi_path_pred (str): Path to the predicted MIDI file.
+        midi_path (str): Path to the predicted MIDI file.
         midi_ground_truth_path (str): Path to the ground truth MIDI file.
     Returns:
-        dict: A dictionary containing evaluation metrics.
+        dict: A dictionary containing evaluation metrics per instrument.
     """
     try:
-        midi_data = ml.load_midi(midi_path_pred)
-        predicted_instruments = ml.get_midi_instrument_names(midi_data)
-        notes = ml.extract_notes(midi_data)
+        predicted_data = ml.load_midi(midi_path_pred)
+        ground_truth_data = ml.load_midi(midi_path_ground_truth)
 
-        if not notes:
-            raise ValueError("No notes found in the predicted MIDI file.")
-        
-        # Load ground truth MIDI file
-        ground_truth_data = ml.load_midi(midi_ground_truth_path)
-        notes = ml.extract_notes(ground_truth_data)
+        predicted_notes = ml.extract_notes(predicted_data)
+        ground_truth_notes = ml.extract_notes(ground_truth_data)
+    
+        if not predicted_notes or not ground_truth_notes:
+            raise ValueError("No notes found in one of the MIDI files.")
 
-        if not notes:
-            raise ValueError("No notes found in the ground truth MIDI file.")
-        
-        # Get ground truth instrument names
-        midi_ground_truth_path = ml.get_midi_instrument_names(ground_truth_data)
-        if not midi_ground_truth_path:
-            raise ValueError("No instruments found in the ground truth MIDI file.")
-        
+        predicted_instruments = list(ml.get_midi_instrument_names(predicted_data).keys())
+        ground_truth_instruments = list(ml.get_midi_instrument_names(ground_truth_data).keys())
 
-        true_positives = len(set(predicted_instruments) & set(midi_ground_truth_path))
-        false_positives = len(set(predicted_instruments) - set(midi_ground_truth_path))
-        false_negatives = len(set(midi_ground_truth_path) - set(predicted_instruments))
-
-        precision = true_positives / (true_positives + false_positives) if (true_positives + false_positives) > 0 else 0.0
-        recall = true_positives / (true_positives + false_negatives) if (true_positives + false_negatives) > 0 else 0.0
-        f1 = f1_score(precision, recall)
+        if not predicted_instruments or not ground_truth_instruments:
+            raise ValueError("No instruments found in one of the MIDI files.")
+        f1_scores = {}
+        # Check if all predicted instruments are in ground truth instruments
+        for instrument in predicted_instruments:
+            if instrument not in ground_truth_instruments:
+                raise ValueError(f"Instrument '{instrument}' in predicted MIDI not found in ground truth MIDI.")
+            else:
+                print(f"Instrument '{instrument}' found in both predicted and ground truth MIDI files.")
+                # Calculate F1 score with overlap and instrument matching
+                instrument_pred_notes = predicted_notes[instrument]
+                instrument_gt_notes = ground_truth_notes[instrument]
+                f1 = f1_score_with_overlap(instrument_pred_notes, instrument_gt_notes)
+                f1_scores[instrument] = f1
+        f1_mean = sum(f1_scores[:][f1_score]) / len(f1_scores)
+        f1_scores['mean'] = f1_mean
+    except Exception as e:
+        raise ValueError(f"Error loading MIDI files: {e}")
+    
+    try:
+        # Calculate F1 score with overlap and instrument matching
+        f1 = f1_score_with_overlap(midi_path_pred, midi_path_ground_truth)
 
         return {
-            "precision": precision,
-            "recall": recall,
-            "f1_score": f1,
+            "evaluation": f1_scores,
+            "f1_score": f1['mean'],
+            "predicted_instruments": ['predicted_instruments'],
+            "ground_truth_instruments": ['ground_truth_instruments'],
             "predicted_midi": midi_path_pred,
-            "ground_truth": midi_ground_truth_path
-
+            "ground_truth": midi_path_ground_truth
         }
+    
     except Exception as e:
         raise ValueError(f"Error evaluating MIDI file: {e}")
+
+
+
+
+
+
+
+
+
+# # Prototype for F1 score with overlap tolerance
+# def f1_score_with_overlap(midi_path_pred: str, midi_ground_truth_path: str, tolerance:float=0.05, min_overlap:float=0.5) -> float:
+#     """
+#     Calculate the F1 score with overlap tolerance for MIDI files.
+
+#     Args:
+#         midi_path_pred (str): Path to the predicted MIDI file.
+#         midi_ground_truth_path (str): Path to the ground truth MIDI file.
+#         tolerance (float): Tolerance for overlap in seconds.
+#         min_overlap (float): Minimum overlap required to consider a note as true positive.
+
+#     Returns:
+#         float: The F1 score with overlap tolerance.
+#     """
+#     try:
+#         predicted_data = ml.load_midi(midi_path_pred)
+#         ground_truth_data = ml.load_midi(midi_ground_truth_path)
+
+#         predicted_notes = ml.extract_notes(predicted_data)
+#         ground_truth_notes = ml.extract_notes(ground_truth_data)
+
+#         if not predicted_notes or not ground_truth_notes:
+#             raise ValueError("No notes found in one of the MIDI files.")
+
+#         true_positives = 0
+#         false_positives = 0
+#         false_negatives = 0
+
+#         for pred_note in predicted_notes:
+#             matched = False
+#             for gt_note in ground_truth_notes:
+#                 if (
+#                     pred_note['pitch'] == gt_note['pitch'] and
+#                     abs(pred_note['start'] - gt_note['start']) <=tolerance and
+#                     abs(pred_note['end'] - gt_note['end']) <= tolerance
+#                 ):
+#                     overlap = min(pred_note.end, gt_note.end) - max(pred_note.start, gt_note.start)
+#                     if overlap >= min_overlap:
+#                         true_positives += 1
+#                         matched = True
+#                         break
+#             if not matched:
+#                 false_positives += 1
+
+#         false_negatives = len(ground_truth_notes) - true_positives
+
+#         precision = true_positives / (true_positives + false_positives) if (true_positives + false_positives) > 0 else 0.0
+#         recall = true_positives / (true_positives + false_negatives) if (true_positives + false_negatives) > 0 else 0.0
+#         f1 = f1_score(precision, recall)
+
+#         return f1
+#     except Exception as e:
+#         raise ValueError(f"Error calculating F1 score with overlap: {e}")  
+
+# Prototype for F1 score with overlap tolerance and instrument matching
