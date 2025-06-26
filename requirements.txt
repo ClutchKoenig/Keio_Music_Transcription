@@ -7,7 +7,7 @@ music21==9.7.1               # Also automatically installs alot of dependencys n
 optuna==4.4.0               # For hyperparameter optimization       
 spleeter==2.4.0             # For preprocessing audio files
 noisereduce==3.0.3          # For noise reduction in audio files    
-
+numpy==1.26.4              # For numerical operations has to be < 2.0.0 otherwise compability issues arise
 # pretty_midi already installed as dependency, version: 0.2.10
 # ffmpeg-python already installed as dependency, version: 0.2.0
 # librosa already installed as dependency, version: 0.11.0
