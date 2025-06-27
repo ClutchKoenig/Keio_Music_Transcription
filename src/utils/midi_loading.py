@@ -1,6 +1,36 @@
 import pretty_midi 
 
+def extract_notes(midi_data: pretty_midi.PrettyMIDI) -> dict[str, list]:
+    """
+    Extract notes from a PrettyMIDI object.
 
+    Args:
+        midi_data (pretty_midi.PrettyMIDI): A PrettyMIDI object representing the MIDI file.
+
+    Returns:
+        list[pretty_midi.Note]: A list of Note objects extracted from the MIDI file.
+    """
+    notes_by_instrument = {}
+    for instrument in midi_data.instruments:
+        if not instrument.is_drum:  # Exclude drum tracks
+            name = instrument.name if instrument.name else "Unnamed"
+            # print(f"Instrument: {name}, Program: {instrument.program}")
+            # Extract notes from the instrument
+            notes_by_instrument[name] = {
+                "pitch": [],
+                "velocity": [],
+                "start": [],
+                "end": [],
+            }
+            for note in instrument.notes:
+                notes_by_instrument[name]["pitch"].append(note.pitch)
+                notes_by_instrument[name]["velocity"].append(note.velocity) 
+                notes_by_instrument[name]["start"].append(note.start)
+                notes_by_instrument[name]["end"].append(note.end)
+    if not notes_by_instrument[name]["pitch"]:
+        raise ValueError("No notes found in the MIDI file.")
+
+    return notes_by_instrument
 
 def load_midi(midi_path:str) -> pretty_midi.PrettyMIDI:
     """
@@ -17,6 +47,7 @@ def load_midi(midi_path:str) -> pretty_midi.PrettyMIDI:
         return midi_data
     except Exception as e:
         raise ValueError(f"Error loading MIDI file: {e}")
+    
 def get_midi_instrument_names(midi_data: pretty_midi.PrettyMIDI) -> list[str]:
     """
     Get the names of instruments in a MIDI file.
