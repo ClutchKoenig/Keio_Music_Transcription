@@ -6,6 +6,10 @@ __pycache__/
 # Spleeter models
 **/pretrained_models/
 
+# Model training folders
+data/
+output/
+
 # C extensions
 *.so
 
