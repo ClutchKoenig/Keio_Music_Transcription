@@ -5,10 +5,12 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 import optuna
 from optuna import Trial
 from optuna.samplers import TPESampler  
-import model.midi_generator
+#import model.midi_generator
 import evaluation
 import midi_loading
 
+from basic_pitch.inference import predict, predict_and_save, Model
+from basic_pitch import ICASSP_2022_MODEL_PATH
 
 # RAW_AUDIO_PATH = 'data/raw/OMORI_cleaner/OMORI_cleaner.mp3'
 # PRED_MIDI_PATH = 'output/model_midi/OMORI_cleaner.mid'
@@ -29,6 +31,12 @@ def objective_F1(trial: Trial) -> float:
     Returns:
         float: The objective value to minimize.
     """
+    if not os.path.exists('output/model_midi'):
+        os.makedirs('output/model_midi')    
+    # Check if the temporary MIDI file exists and remove it
+    if os.path.exists(TMP_PRED_MIDI_PATH):
+        os.remove(TMP_PRED_MIDI_PATH)   
+
     # Define hyperparameters to optimize
     onset_th = trial.suggest_float("onset_threshold",0.1,0.6)
     frame_th = trial.suggest_float("frame_threshold", 0.1, 0.6)
@@ -43,16 +51,12 @@ def objective_F1(trial: Trial) -> float:
     # )
     
     #midi_generator.conversion_1()
-    _, midi_data, _ = model.midi_generator.predict(
-        audio_path_list=[RAW_AUDIO_PATH],
+    _, midi_data, _ = predict(
+        audio_path= RAW_AUDIO_PATH,
         onset_threshold=onset_th,
         frame_threshold=frame_th,
         minimum_note_length=min_duration,
-        save_midi=True,
-        sonify_midi=False,
-        save_model_outputs=False,
-        save_notes=False,
-        model_or_model_path=model.midi_generator.ICASSP_2022_MODEL_PATH
+        model_or_model_path=ICASSP_2022_MODEL_PATH
     )
     midi_data.write(TMP_PRED_MIDI_PATH)
     # Evaluate the generated MIDI file
@@ -60,6 +64,10 @@ def objective_F1(trial: Trial) -> float:
         midi_path=TMP_PRED_MIDI_PATH,
         midi_ground_truth_path=GT_MIDI_PATH
     )
+    # Clean up the temporary MIDI file
+    os.remove(TMP_PRED_MIDI_PATH)
+
+    # Return the F1 score as the objective value
     return evaluation_result['f1_score']
 
 def optimize_model():
