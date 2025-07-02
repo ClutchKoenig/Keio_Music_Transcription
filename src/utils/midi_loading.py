@@ -1,6 +1,6 @@
 import pretty_midi 
-
-def extract_notes(midi_data: pretty_midi.PrettyMIDI) -> dict[str, list]:
+import pandas as pd
+def extract_notes_(midi_data: pretty_midi.PrettyMIDI) -> dict[str, list]:
     """
     Extract notes from a PrettyMIDI object.
 
@@ -60,3 +60,44 @@ def get_midi_instrument_names(midi_data: pretty_midi.PrettyMIDI) -> list[str]:
     """
     return [instrument.name for instrument in midi_data.instruments if instrument.is_drum is False]
 
+def extract_all_notes(midi_data: pretty_midi.PrettyMIDI) -> list[dict]:
+    """
+    Extract notes from a PrettyMIDI object.
+
+    Args:
+        midi_data (pretty_midi.PrettyMIDI): A PrettyMIDI object representing the MIDI file.
+
+    Returns:
+        list[dict]: A list of dictionaries containing note information (pitch, velocity, start, end).
+    """
+    all_notes = []
+    for instrument in midi_data.instruments:
+        if not instrument.is_drum:  # Exclude drum tracks
+            name = instrument.name if instrument.name else "Unnamed"
+            print(f"Instrument: {name}, Program: {instrument.program}")
+            for note in instrument.notes:
+                all_notes.append({
+                    "pitch": note.pitch,
+                    "velocity": note.velocity,
+                    "start": note.start,
+                    "end": note.end
+                })
+    if not all_notes:
+        raise ValueError("No notes found in the MIDI file.")
+    all_notes.sort(key=lambda x: x['start'])  # Sort notes by start time
+    #
+    # print(all_notes)
+    return all_notes
+
+def export_notes_to_csv(notes: list[dict], csv_path: str):
+    """
+    Export notes to a CSV file.
+
+    Args:
+        notes (list[dict]): A list of dictionaries containing note information (pitch, velocity, start, end).
+        csv_path (str): Path to the output CSV file.
+    """
+
+    df = pd.DataFrame(notes)
+    df.to_csv(csv_path, index=False)
+    print(f"Notes exported to {csv_path}")

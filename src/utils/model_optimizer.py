@@ -40,8 +40,11 @@ def objective_F1(trial: Trial) -> float:
     # Define hyperparameters to optimize
     onset_th = trial.suggest_float("onset_threshold",0.1,0.6)
     frame_th = trial.suggest_float("frame_threshold", 0.1, 0.6)
-    min_duration = trial.suggest_float("minimum_note_length", 0.01, 0.15)
+    min_duration = trial.suggest_float("minimum_note_length", 0.08, 0.15)
  
+    tolerance = trial.suggest_float("tolerance", 0.01, 0.2)
+    min_overlap = trial.suggest_float("minimum_overlap", 0.01, 0.2) 
+
 
     # Run the model with the suggested hyperparameters
     # midi_generator = model.midi_generator.audio_conversion(
@@ -61,14 +64,18 @@ def objective_F1(trial: Trial) -> float:
     midi_data.write(TMP_PRED_MIDI_PATH)
     # Evaluate the generated MIDI file
     evaluation_result = evaluation.evaluate_midi(
-        midi_path=TMP_PRED_MIDI_PATH,
-        midi_ground_truth_path=GT_MIDI_PATH
+        midi_path_pred=TMP_PRED_MIDI_PATH,
+        midi_path_ground_truth=GT_MIDI_PATH,
+        tolerance_note=tolerance,
+        overlap_note=min_overlap    
     )
     # Clean up the temporary MIDI file
-    os.remove(TMP_PRED_MIDI_PATH)
+    #os.remove(TMP_PRED_MIDI_PATH)
 
     # Return the F1 score as the objective value
-    return evaluation_result['f1_score']
+    print(f"F1={evaluation_result['f1_score']}")
+    f1 = evaluation_result['f1_score']['f1_score']
+    return f1
 
 def optimize_model():
     """

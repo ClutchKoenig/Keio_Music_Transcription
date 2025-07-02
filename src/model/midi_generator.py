@@ -26,11 +26,13 @@ class audio_conversion():
                          save_midi=True, sonify_midi=False, 
                          save_model_outputs=True, save_notes=True,
                          model_or_model_path=ICASSP_2022_MODEL_PATH)
-        
 
-modell = audio_conversion(song='OMORI_cleaner')
-modell.conversion_1()
-        
+if __name__== '__main__':
+    # Example usage
+    # audio_conversion(song='OMORI_cleaner', audio_path='data/raw', output_path='output/model_midi')
+    # modell = audio_conversion(song='OMORI_cleaner')
+    # modell.conversion_1()
+    print("This is a prototype for audio conversion to MIDI using Basic Pitch.")
 
 
 
