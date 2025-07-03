@@ -45,9 +45,9 @@ def split_audio(
     # 2 stems (vocals, accompaniment)
     # 4 stems (vocals, drums, bass, other)
     # 5 stems (piano, vocals, drums, bass, other)
-    separator = Separator(f'spleeter:{nb_stems}stems')
+    separator = Separator(f'spleeter:{nb_stems}stems', multiprocess=False) #Turned off multiprocessing as it causes problem in windows env
     prediction = separator.separate(y_stereo)
-
+    
     ### Stems are stored in a dictionary:
     # piano = prediction['piano']
     # vocals = prediction['vocals']
