@@ -9,7 +9,8 @@ __pycache__/
 # Model training folders
 data/
 output/
-
+train_history/
+!train_history/README.md
 # C extensions
 *.so
 
