@@ -1,5 +1,6 @@
 from basic_pitch.inference import predict, predict_and_save, Model
 from basic_pitch import ICASSP_2022_MODEL_PATH
+import os
 # Prototype
 # predict_and_save(
 #     <input-audio-path-list>,
@@ -32,9 +33,18 @@ if __name__== '__main__':
     # audio_conversion(song='OMORI_cleaner', audio_path='data/raw', output_path='output/model_midi')
     # modell = audio_conversion(song='OMORI_cleaner')
     # modell.conversion_1()
+    TMP_PRED_MIDI_PATH = 'output/model_midi/tmp_pred_omori.mid'
     print("This is a prototype for audio conversion to MIDI using Basic Pitch.")
+    if not os.path.exists('output/model_midi'):
+        os.makedirs('output/model_midi')    
+    # Check if the temporary MIDI file exists and remove it
 
-
+    if os.path.exists(TMP_PRED_MIDI_PATH):
+        os.remove(TMP_PRED_MIDI_PATH)   
+    modell = audio_conversion(song='busoni_sonata_no2_op_8-BV_61_Scherzo',
+                              audio_path='data/raw/busoni_sonata',
+                              output_path='output/model_midi')
+    modell.conversion_1()
 
 # def convert_audio(song:str, audio_path: str, output_path: str):
 #     audio_path = 'data/raw/{song}.mp3'
