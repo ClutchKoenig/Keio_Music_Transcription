@@ -15,7 +15,7 @@ def f1_score(precision: float, recall: float) -> float:
         return 0.0
     return 2 * (precision * recall) / (precision + recall)
 
-def f1_score_with_overlap(predicted_notes: dict, ground_truth_notes: dict, tolerance:float=3, min_overlap:float=3) -> dict:
+def f1_score_with_overlap(predicted_notes: dict, ground_truth_notes: dict, tolerance:float=3, min_overlap:float=0.25) -> dict:
     """    
         Calculate the F1 score with overlap tolerance for predicted and ground truth notes.
         This function compares predicted notes with ground truth notes, allowing for a specified tolerance in start and end times,
@@ -28,7 +28,7 @@ def f1_score_with_overlap(predicted_notes: dict, ground_truth_notes: dict, toler
         predicted_notes (dict): Dictionary of predicted notes with keys 'pitch', 'start', 'end', and 'instrument'.
         ground_truth_notes (dict): Dictionary of ground truth notes with keys 'pitch', 'start', 'end', and 'instrument'.
         tolerance (float): Tolerance for overlap in seconds.        
-        min_overlap (float): Minimum overlap required to consider a note as true positive.
+        min_overlap (float): Minimum overlap required to consider a note as true positive. given as a percentage of the shorter note's duration.
 
     Returns:
         dict: A dictionary containing the F1 score, precision, and recall.
@@ -61,14 +61,19 @@ def f1_score_with_overlap(predicted_notes: dict, ground_truth_notes: dict, toler
                     # and the end of the predicted note is after the start of the ground truth note
                     # This means the notes overlap
                     overlap = min(pred_note['end'], gt_note['end']) - max(pred_note['start'], gt_note['start'])
-                    # if overlap >= min_overlap:
-                    #     true_positives += 1
-                    #     matched = True
-                    #     break
-                    true_positives += 1
+                    # print(f"Overlap: {overlap}")
+                    # If the overlap is greater than or equal to the minimum required overlap   
+                    # Calculate the minimum required overlap as a percentage of the shorter note's duration
+                    min_note_duration = min(pred_note['end'] - pred_note['start'], gt_note['end'] - gt_note['start'])
+                    required_overlap = min_note_duration * min_overlap
+                    if overlap >= required_overlap:
+                        true_positives += 1
+                        matched = True
+                        break
+                    #true_positives += 1
                     #print(f"+1")
-                    matched = True
-                    break
+                    #matched = True
+                    #break
             if not matched:
                 false_positives += 1
 
@@ -83,7 +88,10 @@ def f1_score_with_overlap(predicted_notes: dict, ground_truth_notes: dict, toler
         return dict(
             f1_score=f1,
             precision=precision,
-            recall=recall
+            recall=recall,
+            false_negatives=false_negatives,
+            false_positives=false_positives,
+            true_positives=true_positives
         )
     
     except Exception as e:
@@ -130,13 +138,24 @@ def evaluate_midi(midi_path_pred: str, midi_path_ground_truth: str, tolerance_no
             "predicted_midi": midi_path_pred,
             "ground_truth": midi_path_ground_truth,
             "precision": f1['precision'],
-            "recall": f1['recall']
+            "recall": f1['recall'],
+            "false_negatives": f1['false_negatives'],
+            "false_positives": f1['false_positives'],   
+            "true_positives": f1['true_positives'],
         }
     except Exception as e:
         raise ValueError(f"Error calculating F1-Score: {e}")
 
-
-
+if __name__ == "__main__":
+    # Example usage
+    midi_path_pred = "output/model_midi/tmp_pred.mid"
+    midi_path_ground_truth = "data/raw/busoni_sonata/Busoni_sonata_no2_op_8-BV_61_Scherzo.mid"
+    
+    try:
+        evaluation_result = evaluate_midi("output/model_midi/tmp_pred.mid", "data/raw/busoni_sonata/Busoni_sonata_no2_op_8-BV_61_Scherzo.mid")
+        print("Evaluation Result:", evaluation_result)
+    except ValueError as e:
+        print(f"Error during evaluation: {e}")
 
 
 # def evaluate_midi_per_instrument(midi_path_pred: str, midi_path_ground_truth: str) -> dict:
