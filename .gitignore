@@ -11,6 +11,7 @@ data/
 output/
 train_history/
 !train_history/README.md
+example.db
 # C extensions
 *.so
 
