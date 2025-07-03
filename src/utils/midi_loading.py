@@ -71,10 +71,12 @@ def extract_all_notes(midi_data: pretty_midi.PrettyMIDI) -> list[dict]:
         list[dict]: A list of dictionaries containing note information (pitch, velocity, start, end).
     """
     all_notes = []
+    print(f"Extracting Notes ...")
     for instrument in midi_data.instruments:
         if not instrument.is_drum:  # Exclude drum tracks
             name = instrument.name if instrument.name else "Unnamed"
-            print(f"Instrument: {name}, Program: {instrument.program}")
+
+            #print(f"Instrument: {name}, Program: {instrument.program}")
             for note in instrument.notes:
                 all_notes.append({
                     "pitch": note.pitch,
@@ -99,5 +101,30 @@ def export_notes_to_csv(notes: list[dict], csv_path: str):
     """
 
     df = pd.DataFrame(notes)
-    df.to_csv(csv_path, index=False)
+    df.to_csv(csv_path, index=False, sep=";", decimal=",")
     print(f"Notes exported to {csv_path}")
+
+
+if __name__ == "__main__":
+    # Example usage
+    # midi_path = 'data/raw/busoni_sonata/Busoni_sonata_no2_op_8-BV_61_Scherzo.mid'
+    # midi_data = load_midi(midi_path)
+    # # Extract notes
+    # notes = extract_all_notes(midi_data)
+    
+    # # Export notes to CSV
+    # export_notes_to_csv(notes, 'output/notes.csv')
+    
+    # # Print instrument names
+    # instrument_names = get_midi_instrument_names(midi_data)
+    # print("Instruments in MIDI file:", instrument_names)
+
+    
+    midi_gt = load_midi('data/raw/busoni_sonata/Busoni_sonata_no2_op_8-BV_61_Scherzo.mid')
+    midi_prd = load_midi('output/model_midi/experiment13/tmp_pred_27.mid')
+
+    notes_gt = extract_all_notes(midi_gt)
+    notes_prd = extract_all_notes(midi_prd)
+
+    export_notes_to_csv(notes_gt, 'output/model_midi/experiment13/gt.csv')
+    export_notes_to_csv(notes_prd, 'output/model_midi/experiment13/trail_27_pred.csv')
