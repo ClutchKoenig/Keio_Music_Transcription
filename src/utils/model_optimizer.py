@@ -225,6 +225,10 @@ def merge_search_and_fixed(search_space: dict, fixed_params: dict) -> tuple[dict
 
 
 if __name__ == "__main__":
+    #/content/music/bin/python Keio_Music_Transcription/src/utils/model_optimizer.py 
+    # --optimize --search_space_onset_threshold 0.42 0.7 --search_space_minimum_note_length 60 150 
+    # --search_space_frame_threshold 0.35 0.6 --tolerance 1 --minimum_overlap 0.1 --experiment_name experiment1 
+    # --audio_path content/Keio_Music_Transcription/Scherzo.mp3 --gt_midi content/Keio_Music_Transcription/Scherzo.mid
 
     parser = argparse.ArgumentParser(description="Run model optimization or single prediction.")
 
@@ -326,11 +330,16 @@ if __name__ == "__main__":
         #     "minimum_overlap": 0.1
         # }
         search_space = {}
-        search_space["onset_threshold"] = tuple(args.search_space_onset_threshold)
-        search_space["frame_threshold"] = tuple(args.search_space_frame_threshold)
-        search_space["minimum_overlap"] = tuple(args.search_space_minimum_overlap)
-        search_space["tolerance"] = tuple(args.search_space_tolerance)
-        search_space["minimum_note_length"] = tuple(args.search_space_minimum_note_length)
+        if tuple(args.search_space_onset_threshold):
+            search_space["onset_threshold"] = tuple(args.search_space_onset_threshold)
+        if tuple(args.search_space_frame_threshold):
+            search_space["frame_threshold"] = tuple(args.search_space_frame_threshold)
+        if tuple(args.search_space_minimum_overlap):
+            search_space["minimum_overlap"] = tuple(args.search_space_minimum_overlap)
+        if tuple(args.search_space_tolerance):
+            search_space["tolerance"] = tuple(args.search_space_tolerance)
+        if tuple(args.search_space_minimum_note_length):
+            search_space["minimum_note_length"] = tuple(args.search_space_minimum_note_length)
         #=======================
 
         # Optimize the model parameters
