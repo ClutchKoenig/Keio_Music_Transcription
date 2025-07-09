@@ -59,23 +59,23 @@ def objective_F1(trial: Trial,hyperparameter:dict ,search_space: dict, experimen
     if not os.path.exists(OUTPUT_PATH):
         # Create the directory if it does not exist
         os.makedirs(OUTPUT_PATH)
-        os.makedirs(f'{OUTPUT_PATH}/{experiment_name}{str(exp_number)}')
+        os.makedirs(f'{OUTPUT_PATH}/experiment{str(exp_number)}')
         # Check if the temp MIDI file exists, if yes rename it with number of current Trail attached and move it to 'output/model_midi/experiment{number}/....mid'
-        if os.path.exists(TMP_PRED_MIDI_PATH):
-            # Rename the temporary MIDI file with the trial number
-            # first trial tmp data belongs to previous experiment
-            # therefore delete
-            if trial.number==0:
-                os.remove(TMP_PRED_MIDI_PATH)
-            elif trial.number > 0:
-                new_midi_path = f'{OUTPUT_PATH}/{experiment_name}{str(exp_number)}/tmp_pred_{trial.number-1}.mid'
-                os.rename(TMP_PRED_MIDI_PATH, new_midi_path)
-                print(f"Renamed temporary MIDI file to {new_midi_path}")
-        else:
-            print(f"Temporary MIDI file {TMP_PRED_MIDI_PATH} does not exist. Creating a new one.")
+    if os.path.exists(TMP_PRED_MIDI_PATH):
+        # Rename the temporary MIDI file with the trial number
+        # first trial tmp data belongs to previous experiment
+        # therefore delete
+        if trial.number==0:
+            os.remove(TMP_PRED_MIDI_PATH)
+        elif trial.number > 0:
+            new_midi_path = f'{OUTPUT_PATH}/experiment{str(exp_number)}/tmp_pred_{trial.number-1}.mid'
+            os.rename(TMP_PRED_MIDI_PATH, new_midi_path)
+            print(f"Renamed temporary MIDI file to {new_midi_path}")
+    else:
+        print(f"Temporary MIDI file {TMP_PRED_MIDI_PATH} does not exist. Creating a new one.")
 
-            # remove in case 
-            #os.remove(TMP_PRED_MIDI_PATH)   
+        # remove in case 
+        #os.remove(TMP_PRED_MIDI_PATH)   
 
     if search_space is None:
         print("Warning: Using default search space for hyperparameters.")
@@ -143,10 +143,15 @@ def objective_F1(trial: Trial,hyperparameter:dict ,search_space: dict, experimen
     # Return the F1 score as the objective value
     print(f"F1={evaluation_result['f1_score']}")
     f1 = evaluation_result['f1_score']#['f1_score']
-
+    print(
+    f"\033[31mPitch Deviation:\033[0m \033[1m{evaluation_result['pitch_deviation']}\033[0m, "
+    f"\033[34mOnset Deviation:\033[0m \033[1m{evaluation_result['onset_deviation']}\033[0m, "
+    f"\033[32mDuration Deviation:\033[0m \033[1m{evaluation_result['duration_deviation']}\033[0m, "
+    f"\033[35mDensity Deviation:\033[0m \033[1m{evaluation_result['density_deviation']}\033[0m\n"
+)
     # write the evaluation results for every trial to a file 
     #number = 5
-    TRAIN_HISTORY_PATH = f'train_history/{experiment_name}{exp_number}'
+    TRAIN_HISTORY_PATH = f'train_history/experiment{exp_number}'
     if not os.path.exists(TRAIN_HISTORY_PATH):
         os.makedirs(TRAIN_HISTORY_PATH)
 
@@ -155,18 +160,20 @@ def objective_F1(trial: Trial,hyperparameter:dict ,search_space: dict, experimen
         f.write(f"================ Trial{trial.number} ==================\n")
         f.write(f"search_space: {search_space}\n")
         f.write(f"F1 Score: {f1}, Precision: {evaluation_result['precision']}, Recall: {evaluation_result['recall']}\n")
+        f.write(f"pitch_deviation: {evaluation_result['pitch_deviation']}, onset_deviation: {evaluation_result['onset_deviation']},duration_deviation: {evaluation_result['duration_deviation']}, density_deviation: {evaluation_result['density_deviation']}")
         f.write(f"True Positives: {evaluation_result['true_positives']}, false Positives: {evaluation_result['false_positives']}, false Negatives: {evaluation_result['false_negatives']}\n")
         f.write(f"onset_threshold: {onset_th}\n")
         f.write(f"frame_threshold: {frame_th}\n")
         f.write(f"minimum_note_length: {min_duration}\n")
         f.write(f"tolerance: {tolerance}\n")
         f.write(f"minimum_overlap: {min_overlap}\n")
+
         f.write(f"=====================================================\n")
     print(f"Evaluation results written to {f1_file_path}")
     # End of Trial
     print(f"========================= End of Running Trial {trial.number} with experiment number {exp_number} ========================")
     # Return the F1 score as the objective value    
-    return f1
+    return f1, evaluation_result["pitch_deviation"], evaluation_result["onset_deviation"], evaluation_result["duration_deviation"], evaluation_result['density_deviation']
 
 def optimize_model(hyperparameter_search_space=None, 
                    hyperparameters_to_optimize=None,
@@ -194,15 +201,20 @@ def optimize_model(hyperparameter_search_space=None,
         }
 
     sampler = TPESampler(seed=42)
-    study = optuna.create_study(direction="maximize", sampler=sampler, storage="sqlite:///example.db",
-                               study_name=experiment_name, load_if_exists=True)
+    study = optuna.create_study(directions=["maximize", "minimize", "minimize", "minimize", "minimize"],
+                                sampler=sampler, storage="sqlite:///example.db",
+                                study_name=experiment_name, load_if_exists=True)
     # study.optimize(objective_F1(lambda trial: objective_F1(trial, 
     #                                                        hyperparameter=hyperparameters_to_optimize, 
     #                                                        hyperparameter_search_space=hyperparameter_search_space)), 
     #                                                        n_trials=20)
-    study.optimize(lambda trial: objective_F1(trial, hyperparameters_to_optimize, hyperparameter_search_space, experiment_name=experiment_name), n_trials=50)
+    study.optimize(lambda trial: objective_F1(trial, hyperparameters_to_optimize, 
+                                              hyperparameter_search_space, experiment_name=experiment_name), n_trials=200)
     print("Best hyperparameters:", study.best_params)
     print("Best F1 score:", study.best_value)
+    optuna.visualization.plot_pareto_front(study)
+
+
 
 def merge_search_and_fixed(search_space: dict, fixed_params: dict) -> tuple[dict, dict]:
     """
@@ -225,11 +237,8 @@ def merge_search_and_fixed(search_space: dict, fixed_params: dict) -> tuple[dict
 
 
 if __name__ == "__main__":
-    #/content/music/bin/python Keio_Music_Transcription/src/utils/model_optimizer.py 
-    # --optimize --search_space_onset_threshold 0.42 0.7 --search_space_minimum_note_length 60 150 
-    # --search_space_frame_threshold 0.35 0.6 --tolerance 1 --minimum_overlap 0.1 --experiment_name experiment1 
-    # --audio_path content/Keio_Music_Transcription/Scherzo.mp3 --gt_midi content/Keio_Music_Transcription/Scherzo.mid
-
+    # /content/Keio_Music_Transcription/src/utils/model_optimizer.py --optimize --search_space_onset_threshold 0.42 0.7 --search_space_minimum_note_length 60 150 --search_space_frame_threshold 0.35 0.6 --tolerance 1 --minimum_overlap 0.1 --experiment_name experiment1 --audio_path content/Keio_Music_Transcription/Scherzo.mp3 --gt_midi content/Keio_Music_Transcription/Scherzo.mid
+    # during runtime use optuna-dashboard sqlite:///example.db in commandline for viuslization
     parser = argparse.ArgumentParser(description="Run model optimization or single prediction.")
 
     # === Allgemeine Flags ===
@@ -245,8 +254,8 @@ if __name__ == "__main__":
     parser.add_argument('--onset_threshold', type=float, default=None, help='Fixed onset threshold')
     parser.add_argument('--frame_threshold', type=float, default=None, help='Fixed frame threshold')
     parser.add_argument('--minimum_note_length', type=int, default=None, help='Fixed minimum note length in ms')
-    parser.add_argument('--tolerance', type=float, default=None, help='Fixed matching tolerance')
-    parser.add_argument('--minimum_overlap', type=float, default=None, help='Fixed minimum overlap')
+    parser.add_argument('--tolerance', type=float, default=1, help='Fixed matching tolerance')
+    parser.add_argument('--minimum_overlap', type=float, default=0.1, help='Fixed minimum overlap')
 
     # === Optionaler Search-Space für Optimierung ===
     parser.add_argument('--search_space_onset_threshold', nargs=2, type=float, help='Range for onset_threshold')
@@ -330,17 +339,18 @@ if __name__ == "__main__":
         #     "minimum_overlap": 0.1
         # }
         search_space = {}
-        if tuple(args.search_space_onset_threshold):
+        if args.search_space_onset_threshold:
             search_space["onset_threshold"] = tuple(args.search_space_onset_threshold)
-        if tuple(args.search_space_frame_threshold):
+        if args.search_space_frame_threshold:
             search_space["frame_threshold"] = tuple(args.search_space_frame_threshold)
-        if tuple(args.search_space_minimum_overlap):
+        if args.search_space_minimum_overlap:
             search_space["minimum_overlap"] = tuple(args.search_space_minimum_overlap)
-        if tuple(args.search_space_tolerance):
+        if args.search_space_tolerance:
             search_space["tolerance"] = tuple(args.search_space_tolerance)
-        if tuple(args.search_space_minimum_note_length):
+        if args.search_space_minimum_note_length:
             search_space["minimum_note_length"] = tuple(args.search_space_minimum_note_length)
         #=======================
+#src/utils/model_optimizer.py --optimize --search_space_onset_threshold 0.42 0.7 --search_space_minimum_note_length 60 150 --search_space_frame_threshold 0.35 0.7 --experiment_name experiment20 --audio_path data/raw/busoni_sonata/Scherzo.mp3 --gt_midi data/raw/busoni_sonata/Scherzo_original_gt.mid
 
         # Optimize the model parameters
         # Experiment name can be used to differentiate between different runs
