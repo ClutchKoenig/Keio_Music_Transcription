@@ -1,6 +1,8 @@
 from basic_pitch.inference import predict, predict_and_save, Model
 from basic_pitch import ICASSP_2022_MODEL_PATH
 import os
+from model_parameter import INSTRUMENT_PARAMS
+
 # Prototype
 # predict_and_save(
 #     <input-audio-path-list>,
@@ -11,46 +13,65 @@ import os
 #     <save-notes>,
 # )
 #model_output, midi_data, note_events = predict("input/audio/file.wav")
-class audio_conversion():
-    def __init__(self, song:str = 'default_song', 
-                 audio_path: str = 'data/raw', 
-                 output_path: str = 'output/model_midi'):
-        
-        self.audio_path = f'{audio_path}/{song}/{song}.mp3'
-        self.output_path = output_path
-    
-    def conversion_1(self):
-        print("🔍 Lade Audio:", self.audio_path)
-        print("📂 Speichere nach:", self.output_path)
+def get_instrument_from_filename(filename: str) -> str:
+    """
+    Extrahiert das Instrument anhand des Dateinamens.
+    """
+    for key in INSTRUMENT_PARAMS.keys():
+        if key in filename.lower():
+            return key
+    return "other"  # Fallback, falls nichts gefunden
 
-        predict_and_save(audio_path_list=[self.audio_path], output_directory=self.output_path, 
-                         save_midi=True, sonify_midi=False, 
-                         save_model_outputs=True, save_notes=True,
-                         model_or_model_path=ICASSP_2022_MODEL_PATH)
+def transcribe_with_optimal_params(wav_path: str, output_dir: str):
+    """
+    Führt die Transkription mit den zum Instrument passenden Parametern aus.
+    """
+    instrument = get_instrument_from_filename(wav_path)
+    params = INSTRUMENT_PARAMS[instrument]
 
-if __name__== '__main__':
-    # Example usage
-    # audio_conversion(song='OMORI_cleaner', audio_path='data/raw', output_path='output/model_midi')
-    # modell = audio_conversion(song='OMORI_cleaner')
-    # modell.conversion_1()
-    TMP_PRED_MIDI_PATH = 'output/model_midi/tmp_pred_omori.mid'
-    print("This is a prototype for audio conversion to MIDI using Basic Pitch.")
-    if not os.path.exists('output/model_midi'):
-        os.makedirs('output/model_midi')    
-    # Check if the temporary MIDI file exists and remove it
+    output_path = os.path.join(output_dir, f"{instrument}.mid")
+    print(f"Found Instrument: {instrument}")
+    predict_midi(
+        audio_path=wav_path,
+        output_path=output_path,
+        onset_threshold=params["onset_threshold"],
+        frame_threshold=params["frame_threshold"],
+        minimum_note_length=params["minimum_note_length"]
+    )
 
-    if os.path.exists(TMP_PRED_MIDI_PATH):
-        os.remove(TMP_PRED_MIDI_PATH)   
-    modell = audio_conversion(song='busoni_sonata_no2_op_8-BV_61_Scherzo',
-                              audio_path='data/raw/busoni_sonata',
-                              output_path='output/model_midi')
-    modell.conversion_1()
+def predict_midi(
+    audio_path: str,
+    output_path: str,
+    onset_threshold: float = 0.5,
+    frame_threshold: float = 0.5,
+    minimum_note_length: int = 50
+) -> str:
+    """
+    Predicts a MIDI file from an audio input using basic-pitch with custom hyperparameters.
 
-# def convert_audio(song:str, audio_path: str, output_path: str):
-#     audio_path = 'data/raw/{song}.mp3'
-#     output_path = 'output/model_midi'
+    Args:
+        audio_path (str): Path to the audio file.
+        output_path (str): Path to save the predicted MIDI file.
+        onset_threshold (float): Threshold for detecting note onsets (0.0 - 1.0).
+        frame_threshold (float): Threshold for detecting note frames (0.0 - 1.0).
+        minimum_note_length (int): Minimum note duration in milliseconds.
 
-    
-    
-    
-#convert_audio('OMORI_Final-Duet')
+    Returns:
+        str: Path to the saved MIDI file.
+    """
+    print(f"Predicting MIDI for: {audio_path}")
+    print(f"Using hyperparameters: onset_threshold={onset_threshold}, frame_threshold={frame_threshold}, min_note_length={minimum_note_length}")
+
+    _, midi_data, _ = predict(
+        audio_path=audio_path,
+        model_or_model_path=ICASSP_2022_MODEL_PATH,
+        onset_threshold=onset_threshold,
+        frame_threshold=frame_threshold,
+        minimum_note_length=minimum_note_length
+    )
+    midi_data.write(output_path)
+    print(f"Saved MIDI: {output_path}")
+    return output_path
+
+
+# run_model.py
