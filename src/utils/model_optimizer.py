@@ -61,18 +61,29 @@ def objective_F1(trial: Trial,hyperparameter:dict ,search_space: dict, experimen
         os.makedirs(OUTPUT_PATH)
         os.makedirs(f'{OUTPUT_PATH}/experiment{str(exp_number)}')
         # Check if the temp MIDI file exists, if yes rename it with number of current Trail attached and move it to 'output/model_midi/experiment{number}/....mid'
-    if os.path.exists(TMP_PRED_MIDI_PATH):
-        # Rename the temporary MIDI file with the trial number
-        # first trial tmp data belongs to previous experiment
-        # therefore delete
-        if trial.number==0:
-            os.remove(TMP_PRED_MIDI_PATH)
-        elif trial.number > 0:
-            new_midi_path = f'{OUTPUT_PATH}/experiment{str(exp_number)}/tmp_pred_{trial.number-1}.mid'
-            os.rename(TMP_PRED_MIDI_PATH, new_midi_path)
-            print(f"Renamed temporary MIDI file to {new_midi_path}")
-    else:
-        print(f"Temporary MIDI file {TMP_PRED_MIDI_PATH} does not exist. Creating a new one.")
+    # if os.path.exists(TMP_PRED_MIDI_PATH):
+    #     # Rename the temporary MIDI file with the trial number
+    #     # first trial tmp data belongs to previous experiment
+    #     # therefore delete
+    #     if trial.number==0:
+    #         os.remove(TMP_PRED_MIDI_PATH)
+    #     elif trial.number > 0:
+    #         new_midi_path = f'{OUTPUT_PATH}/experiment{str(exp_number)}/tmp_pred_{trial.number-1}.mid'
+    #         os.rename(TMP_PRED_MIDI_PATH, new_midi_path)
+    #         print(f"Renamed temporary MIDI file to {new_midi_path}")
+    # else:
+    #     print(f"Temporary MIDI file {TMP_PRED_MIDI_PATH} does not exist. Creating a new one.")
+    #     # Create experiment output dir if not exists
+    exp_output_dir = f'{OUTPUT_PATH}/experiment{str(exp_number)}'
+    os.makedirs(exp_output_dir, exist_ok=True)
+
+    # Rename previous trial's tmp_midi if it exists
+    prev_trial_path = f'{exp_output_dir}/tmp_pred_{trial.number - 1}.mid'
+    if trial.number > 0 and os.path.exists(TMP_PRED_MIDI_PATH):
+        os.rename(TMP_PRED_MIDI_PATH, prev_trial_path)
+        print(f"✅ Renamed trial {trial.number - 1} MIDI to: {prev_trial_path}")
+    elif trial.number > 0:
+        print(f"⚠️ WARNING: MIDI for previous trial not found: {TMP_PRED_MIDI_PATH}")
 
         # remove in case 
         #os.remove(TMP_PRED_MIDI_PATH)   
