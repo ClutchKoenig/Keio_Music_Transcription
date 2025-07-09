@@ -59,7 +59,7 @@ def predict_midi(
     Returns:
         str: Path to the saved MIDI file.
     """
-    print(f"Predicting MIDI for: {audio_path}")
+    print(f"🎶 Predicting MIDI for: {audio_path}")
     print(f"Using hyperparameters: onset_threshold={onset_threshold}, frame_threshold={frame_threshold}, min_note_length={minimum_note_length}")
 
     _, midi_data, _ = predict(
