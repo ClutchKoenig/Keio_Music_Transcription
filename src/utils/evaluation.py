@@ -1,6 +1,7 @@
 import midi_loading as ml
 import numpy as np
- 
+import librosa 
+
 def f1_score(precision: float, recall: float) -> float:
     """
     Calculate the F1 score given precision and recall.
@@ -112,6 +113,72 @@ def align_notes(predicted_notes:dict, ground_truth_notes:dict, max_offset=2.0, s
     offset = notes_gt[0]['start'] - notes_prd[0]['start']
     notes_prd_aligned = [{**note, "start": note["start"] + offset, "end": note["end"] + offset} for note in notes_prd]
     return offset, notes_prd_aligned
+def pitch_deviation(pred_notes: list[dict], gt_notes: list[dict], match_window=0.1):
+    """
+    Computes the average absolute pitch difference between matched predicted and ground truth notes.
+    """
+    if not pred_notes or not gt_notes:
+        return np.nan
+    pitch_diffs = []
+    for p_note in pred_notes:
+        time_diffs = [abs(gt_note['start'] - p_note['start']) for gt_note in gt_notes]
+        if not time_diffs:
+            continue
+        idx = np.argmin(time_diffs)
+        if time_diffs[idx] <= match_window:
+            pitch_diffs.append(abs(p_note['pitch'] - gt_notes[idx]['pitch']))
+    return np.mean(pitch_diffs) if pitch_diffs else np.nan
+
+
+def onset_deviation(pred_notes: list[dict], gt_notes: list[dict]):
+    """
+    Computes the average onset deviation between predicted and closest ground truth notes.
+    """
+    if not pred_notes or not gt_notes:
+        return np.nan
+    onset_diffs = []
+    for p_note in pred_notes:
+        time_diffs = [abs(gt_note['start'] - p_note['start']) for gt_note in gt_notes]
+        if not time_diffs:
+            continue
+        idx = np.argmin(time_diffs)
+        onset_diffs.append(time_diffs[idx])
+    return np.mean(onset_diffs) if onset_diffs else np.nan
+
+
+def duration_deviation(pred_notes: list[dict], gt_notes: list[dict]):
+    """
+    Computes the average duration difference between predicted and closest ground truth notes.
+    """
+    if not pred_notes or not gt_notes:
+        return np.nan
+    dur_diffs = []
+    for p_note in pred_notes:
+        time_diffs = [abs(gt_note['start'] - p_note['start']) for gt_note in gt_notes]
+        if not time_diffs:
+            continue
+        idx = np.argmin(time_diffs)
+        pred_dur = p_note['end'] - p_note['start']
+        gt_dur = gt_notes[idx]['end'] - gt_notes[idx]['start']
+        dur_diffs.append(abs(pred_dur - gt_dur))
+    return np.mean(dur_diffs) if dur_diffs else np.nan
+
+
+def density_deviation(pred_notes: list[dict], gt_notes: list[dict], binsize=2.0):
+    """
+    Computes the average difference in note density over fixed time bins.
+    """
+    if not pred_notes or not gt_notes:
+        return np.nan
+    pred_starts = [note['start'] for note in pred_notes]
+    gt_starts = [note['start'] for note in gt_notes]
+    total_duration = max(max(pred_starts, default=0), max(gt_starts, default=0))
+    bins = np.arange(0, total_duration + binsize, binsize)
+    gt_hist, _ = np.histogram(gt_starts, bins=bins)
+    pred_hist, _ = np.histogram(pred_starts, bins=bins)
+    return np.mean(np.abs(gt_hist - pred_hist)) if len(gt_hist) == len(pred_hist) else np.nan
+
+
 
 def evaluate_midi(midi_path_pred: str, midi_path_ground_truth: str, tolerance_note: float=0.1, overlap_note: float=0.1) -> dict:
     """
@@ -150,7 +217,12 @@ def evaluate_midi(midi_path_pred: str, midi_path_ground_truth: str, tolerance_no
 
     try:
         f1 = f1_score_with_overlap(predicted_notes, ground_truth_notes, tolerance=tolerance_note, min_overlap=overlap_note)
-
+        metrics = {
+        "pitch_deviation": pitch_deviation(predicted_notes, ground_truth_notes),
+        "onset_deviation": onset_deviation(predicted_notes, ground_truth_notes),
+        "duration_deviation": duration_deviation(predicted_notes, ground_truth_notes),
+        "density_deviation": density_deviation(predicted_notes, ground_truth_notes),
+}
         return {
             "f1_score": f1['f1_score'],
             "predicted_midi": midi_path_pred,
@@ -160,6 +232,11 @@ def evaluate_midi(midi_path_pred: str, midi_path_ground_truth: str, tolerance_no
             "false_negatives": f1['false_negatives'],
             "false_positives": f1['false_positives'],   
             "true_positives": f1['true_positives'],
+            "pitch_deviation": pitch_deviation(predicted_notes, ground_truth_notes),
+            "onset_deviation": onset_deviation(predicted_notes, ground_truth_notes),
+            "duration_deviation": duration_deviation(predicted_notes, ground_truth_notes),
+            "density_deviation": density_deviation(predicted_notes, ground_truth_notes),
+
         }
     except Exception as e:
         raise ValueError(f"Error calculating F1-Score: {e}")
