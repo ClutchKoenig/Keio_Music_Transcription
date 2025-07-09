@@ -1,9 +1,15 @@
-import utils.split as splt
-import utils.evaluation as ev
-import utils.model_optimizer as opt
-from model.model_parameter import INSTRUMENT_PARAMS
-import model.midi_generator as midi_gen
+# import utils.split as splt
+# import utils.evaluation as ev
+# import utils.model_optimizer as opt
+# from model.model_parameter import INSTRUMENT_PARAMS
+# import model.midi_generator as midi_gen
 import soundfile as sf
+from src.utils import split as splt
+from src.utils import evaluation as ev
+from src.utils import model_optimizer as opt
+from src.model import midi_generator as midi_gen
+from src.model.model_parameter import INSTRUMENT_PARAMS
+
 
 import os
 from pathlib import Path
