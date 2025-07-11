@@ -1,7 +1,7 @@
 from basic_pitch.inference import predict, predict_and_save, Model
 from basic_pitch import ICASSP_2022_MODEL_PATH
 import os
-from model_parameter import INSTRUMENT_PARAMS
+from model.model_parameter import INSTRUMENT_PARAMS
 
 # Prototype
 # predict_and_save(

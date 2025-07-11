@@ -3,18 +3,22 @@
 # import utils.model_optimizer as opt
 # from model.model_parameter import INSTRUMENT_PARAMS
 # import model.midi_generator as midi_gen
-import soundfile as sf
-from src.utils import split as splt
-from src.utils import evaluation as ev
-from src.utils import model_optimizer as opt
-from src.model import midi_generator as midi_gen
-from src.model.model_parameter import INSTRUMENT_PARAMS
+import os
+import sys
+sys.path.append(os.path.abspath('./src'))
 
+import soundfile as sf
+from utils import split as splt
+from utils import evaluation as ev
+from utils import model_optimizer as opt
+from model import midi_generator as midi_gen
+from model.model_parameter import  INSTRUMENT_PARAMS
+from basic_pitch.inference import Model
+from basic_pitch import ICASSP_2022_MODEL_PATH
 
 import os
 from pathlib import Path
-import os
-import sys
+
 
 # RAW_AUDIO_PATH = 'data/raw/busoni_sonata/Busoni_sonata_no2_op_8-BV_61_Scherzo.mp3'
 # PRED_MIDI_PATH = 'output/model_midi/Busoni_sonata_no2_op_8-BV_61_Scherzo_basic_pitch.mid'
@@ -24,28 +28,29 @@ import sys
 
 ###    TEMP    ###
 
-import argparse
+# import argparse
 
-parser = argparse.ArgumentParser()
-parser.add_argument('--input', type=str, required=True)
-parser.add_argument('--output', type=str, required=True)
-parser.add_argument('--format', type=str, choices=['midi', 'pdf'], required=True)
-args = parser.parse_args()
+# parser = argparse.ArgumentParser()
+# parser.add_argument('--input', type=str, required=True)
+# parser.add_argument('--output', type=str, required=True)
+# parser.add_argument('--format', type=str, choices=['midi', 'pdf'], required=True)
+# args = parser.parse_args()
 
-# Exemple : traitement à adapter selon ton modèle
-print(f"Traitement du fichier {args.input} vers {args.output} au format {args.format}")
+# # Exemple : traitement à adapter selon ton modèle
+# print(f"Traitement du fichier {args.input} vers {args.output} au format {args.format}")
 
-# Simulate waiting time
-import time
-time.sleep(2)
+# # Simulate waiting time
+# import time
+# time.sleep(2)
 
-# simulate conversion
-with open(args.output, 'w') as f:
-    f.write("converted content")
+# # simulate conversion
+# with open(args.output, 'w') as f:
+#     f.write("converted content")
 
 ###    TEMP    ###
 # BELOW IS ADDED THE STANDARD RUN PROCEDURE============================================================================
 if __name__=='__main__':
+    
     audio_file = 'song_name.mp3' # Here the string should be replaced using the input parser
 
     base_name = Path(audio_file).stem  # → "song_name"
@@ -62,6 +67,9 @@ if __name__=='__main__':
     Split the main audio into seperate instrument stems
     '''
     stems = splt.split_audio(audio_file)
+    
+    # import tensorflow as tf
+    # tf.keras.backend.clear_session()
     for name, wav in stems.items():
         '''
         Iterate over all stems and generate .mid + score

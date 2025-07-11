@@ -8,12 +8,12 @@ from optuna import Trial
 from optuna.samplers import TPESampler  
 from optuna import visualization as vis
 #import model.midi_generator
-import evaluation
-import midi_loading
+from utils import evaluation
+from utils import midi_loading
 
 from basic_pitch.inference import predict, predict_and_save, Model
 from basic_pitch import ICASSP_2022_MODEL_PATH
-import utils.split as splt
+from utils import split as splt
 # RAW_AUDIO_PATH = 'data/raw/OMORI_cleaner/OMORI_cleaner.mp3'
 # PRED_MIDI_PATH = 'output/model_midi/OMORI_cleaner.mid'
 # GT_MIDI_PATH = 'data/raw/OMORI_cleaner/OMORI_cleaner.mid'
