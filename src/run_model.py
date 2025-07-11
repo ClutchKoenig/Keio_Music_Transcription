@@ -19,7 +19,7 @@ from basic_pitch import ICASSP_2022_MODEL_PATH
 import os
 from pathlib import Path
 
-
+import subprocess
 # RAW_AUDIO_PATH = 'data/raw/busoni_sonata/Busoni_sonata_no2_op_8-BV_61_Scherzo.mp3'
 # PRED_MIDI_PATH = 'output/model_midi/Busoni_sonata_no2_op_8-BV_61_Scherzo_basic_pitch.mid'
 # GT_MIDI_PATH = 'data/raw/busoni_sonata/Busoni_sonata_no2_op_8-BV_61_Scherzo.mid'
@@ -67,7 +67,8 @@ if __name__=='__main__':
     Split the main audio into seperate instrument stems
     '''
     stems = splt.split_audio(audio_file)
-    
+    subprocess.run(["/content/music_venv310/bin/python", "src/utils/split.py", audio_file], check=True)
+
     # import tensorflow as tf
     # tf.keras.backend.clear_session()
     for name, wav in stems.items():
