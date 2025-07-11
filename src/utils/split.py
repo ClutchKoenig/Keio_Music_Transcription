@@ -29,7 +29,7 @@ import numpy as np
 import librosa
 import noisereduce as nr
 import soundfile as sf
-
+from pathlib import Path 
 
 def split_audio(
         file, 
@@ -84,8 +84,9 @@ def output_split(
     ):
     prediction = split_audio(input_file, nb_stems, prop_decrease, rms)
 
+    song_name = Path(input_file).stem
     filename = os.path.splitext(os.path.basename(input_file))[0]
-    output_dir = f'output/Split/{filename}'
+    output_dir = f'output/{song_name}/stems'
     os.makedirs(output_dir, exist_ok=True)
 
     for stem, audio in prediction.items():
@@ -93,7 +94,6 @@ def output_split(
         sf.write(output_file, audio, 44100)
         print(f"Saved {stem} stem to {output_file}")
     print("================Audio splitting completed=====================")
-
 
 if __name__ == "__main__":
     output_split(args.file, args.nb_stems, args.prop_decrease, args.rms)

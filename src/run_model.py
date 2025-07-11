@@ -66,17 +66,19 @@ if __name__=='__main__':
     '''
     Split the main audio into seperate instrument stems
     '''
-    stems = splt.split_audio(audio_file)
+    #stems = splt.split_audio(audio_file)
     subprocess.run(["/content/music_venv310/bin/python", "src/utils/split.py", audio_file], check=True)
 
     # import tensorflow as tf
     # tf.keras.backend.clear_session()
-    for name, wav in stems.items():
+    for wav_path in stem_dir.iterdir():
+        name = Path(wav_path).stem
+        print(f"Predicting MidiFile for:{name}")
         '''
         Iterate over all stems and generate .mid + score
         '''
-        wav_path = stem_dir / f"{name}.wav"
-        sf.write(wav_path, wav, 44100)
+        #wav_path = stem_dir / f"{name}.wav"
+        #sf.write(wav_path, wav, 44100)
 
         # Generate MIDI file for this stem
         midi_gen.transcribe_with_optimal_params(
