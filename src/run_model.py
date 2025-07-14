@@ -53,7 +53,12 @@ if __name__=='__main__':
     Split the main audio into seperate instrument stems
     '''
     #stems = splt.split_audio(audio_file)
-    subprocess.run(["/content/music_venv310/bin/python", "src/utils/split.py", audio_file], check=True)
+    subprocess.run([
+        "/content/music_venv310/bin/python", 
+        "src/utils/split.py", 
+        audio_file, 
+        "--output", stem_dir
+    ], check=True)
 
     # import tensorflow as tf
     # tf.keras.backend.clear_session()

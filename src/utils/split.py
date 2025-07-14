@@ -10,6 +10,7 @@ RMS_DEFAULT = 0.005
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Split audio into stems using Spleeter.")
     parser.add_argument("file", help="Path to input audio file")
+    parser.add_argument("--output", type=str, default="output/")
     parser.add_argument("--nb_stems", type=int, default=NB_STEMS_DEFAULT, 
                         help="Number of stems to separate (2, 4, or 5)")
     parser.add_argument("--prop_decrease", type=float, default=PROP_DECREASE_DEFAULT, 
@@ -86,11 +87,10 @@ def output_split(
 
     song_name = Path(input_file).stem
     filename = os.path.splitext(os.path.basename(input_file))[0]
-    output_dir = f'output/{song_name}/stems'
-    os.makedirs(output_dir, exist_ok=True)
+    os.makedirs(args.output, exist_ok=True)
 
     for stem, audio in prediction.items():
-        output_file = os.path.join(output_dir, f"{stem}.wav")
+        output_file = os.path.join(args.output, f"{stem}.wav")
         sf.write(output_file, audio, 44100)
         print(f"Saved {stem} stem to {output_file}")
     print("================Audio splitting completed=====================")
