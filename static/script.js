@@ -58,13 +58,16 @@ convertBtn.addEventListener('click', async () => {
     formData.append('audio', file);
     formData.append('format', format);
 
-    // Show spinner and hide button text
     convertText.classList.add('hidden');
     convertSpinner.classList.remove('hidden');
 
     try {
+        const headers = new Headers();
+        headers.append('ngrok-skip-browser-warning', 'true');
+
         const response = await fetch('/convert', {
             method: 'POST',
+            headers: headers,
             body: formData
         });
 
@@ -84,7 +87,6 @@ convertBtn.addEventListener('click', async () => {
         console.error(error);
         alert('An error occurred during conversion.');
     } finally {
-        // Restore button text and hide spinner
         convertText.classList.remove('hidden');
         convertSpinner.classList.add('hidden');
     }
