@@ -26,35 +26,21 @@ import subprocess
 # TMP_PRED_MIDI_PATH = 'output/model_midi/tmp_pred.mid'
 
 
-###    TEMP    ###
+import argparse
 
-# import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument('input', type=str, help='Path to the input audio file')
+parser.add_argument('--output', type=str, required=False, default='output/')
+parser.add_argument('--format', type=str, choices=['midi', 'pdf'], required=False, default='midi')
+args = parser.parse_args()
 
-# parser = argparse.ArgumentParser()
-# parser.add_argument('--input', type=str, required=True)
-# parser.add_argument('--output', type=str, required=True)
-# parser.add_argument('--format', type=str, choices=['midi', 'pdf'], required=True)
-# args = parser.parse_args()
-
-# # Exemple : traitement à adapter selon ton modèle
-# print(f"Traitement du fichier {args.input} vers {args.output} au format {args.format}")
-
-# # Simulate waiting time
-# import time
-# time.sleep(2)
-
-# # simulate conversion
-# with open(args.output, 'w') as f:
-#     f.write("converted content")
-
-###    TEMP    ###
-# BELOW IS ADDED THE STANDARD RUN PROCEDURE============================================================================
 if __name__=='__main__':
     
-    audio_file = 'song_name.mp3' # Here the string should be replaced using the input parser
+    audio_file = args.input
+    output_dir = args.output
 
     base_name = Path(audio_file).stem  # → "song_name"
-    output_base = Path("output") / base_name
+    output_base = Path(output_dir) / base_name
     stem_dir = output_base / "stems"
     midi_dir = output_base / "midi"
     score_dir = output_base / "score"
