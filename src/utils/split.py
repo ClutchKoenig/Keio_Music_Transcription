@@ -78,8 +78,9 @@ def split_audio(
     return prediction
 
 
-def output_split(
+def split_and_write(
         input_file: str, 
+        output_dir: str = "output/",
         nb_stems=NB_STEMS_DEFAULT, 
         prop_decrease=PROP_DECREASE_DEFAULT, 
         rms=RMS_DEFAULT,
@@ -88,14 +89,14 @@ def output_split(
 
     song_name = Path(input_file).stem
     filename = os.path.splitext(os.path.basename(input_file))[0]
-    os.makedirs(args.output, exist_ok=True)
+    os.makedirs(output_dir, exist_ok=True)
 
     for stem, audio in prediction.items():
-        output_file = os.path.join(args.output, f"{stem}.wav")
+        output_file = os.path.join(output_dir, f"{stem}.wav")
         sf.write(output_file, audio, 44100)
         print(f"Saved {stem} stem to {output_file}")
     print("================Audio splitting completed=====================")
 
 
 if __name__ == "__main__":
-    output_split(args.file, args.nb_stems, args.prop_decrease, args.rms)
+    split_and_write(args.file, args.output, args.nb_stems, args.prop_decrease, args.rms)
