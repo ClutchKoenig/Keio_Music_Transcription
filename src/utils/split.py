@@ -25,12 +25,13 @@ if __name__ == "__main__":
         exit(1)
 
 
-from spleeter.separator import Separator
 import numpy as np
 import librosa
 import noisereduce as nr
 import soundfile as sf
+from spleeter.separator import Separator
 from pathlib import Path 
+
 
 def split_audio(
         file, 
@@ -94,6 +95,7 @@ def output_split(
         sf.write(output_file, audio, 44100)
         print(f"Saved {stem} stem to {output_file}")
     print("================Audio splitting completed=====================")
+
 
 if __name__ == "__main__":
     output_split(args.file, args.nb_stems, args.prop_decrease, args.rms)
