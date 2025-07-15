@@ -37,7 +37,7 @@ def process_audio(audio_file, output_path, format):
 
     # import tensorflow as tf
     # tf.keras.backend.clear_session()
-    for wav_path in stem_dir.iterdir():
+    for wav_path in Path(stem_dir).iterdir():
         name = Path(wav_path).stem
         print(f"Predicting MidiFile for:{name}")
         '''
