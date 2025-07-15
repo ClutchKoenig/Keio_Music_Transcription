@@ -1,4 +1,4 @@
-from utils import midi_loading as ml
+from src.utils import midi_loading as ml
 import numpy as np
 import librosa 
 

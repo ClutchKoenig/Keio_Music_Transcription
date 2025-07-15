@@ -3,6 +3,7 @@ from flask import Flask, request, send_file
 from flask_cors import CORS
 from io import BytesIO
 from pyngrok import ngrok
+from src.run_model import process_audio
 
 app = Flask(__name__)
 CORS(app)
@@ -23,18 +24,11 @@ def convert():
     with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp_input:
         file.save(tmp_input.name)
         input_path = tmp_input.name
-        base_name = os.path.splitext(os.path.basename(input_path))[0]
 
     output_dir = tempfile.mkdtemp()
 
     try:
-        subprocess.run([
-            "/content/music_venv310/bin/python3.10", 
-            "src/run_model.py", 
-            input_path,
-            "--output", output_dir,
-            "--format", format
-        ], check=True)
+        process_audio(input_path, output_dir, format)
 
         # Rechercher le fichier généré
         ext = 'mid' if format == 'midi' else 'pdf'

@@ -1,10 +1,4 @@
-import sys
-import os
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-
-import utils.split as splt
-import librosa
-
+import src.utils.split as splt
 
 
 if __name__ == "__main__":

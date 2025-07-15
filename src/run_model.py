@@ -3,47 +3,22 @@
 # import utils.model_optimizer as opt
 # from model.model_parameter import INSTRUMENT_PARAMS
 # import model.midi_generator as midi_gen
-import os
-import sys
-sys.path.append(os.path.abspath('./src'))
 
-import soundfile as sf
-from utils import split as splt
-from utils import evaluation as ev
-from utils import model_optimizer as opt
-from model import midi_generator as midi_gen
-from model.model_parameter import  INSTRUMENT_PARAMS
-from basic_pitch.inference import Model
-from basic_pitch import ICASSP_2022_MODEL_PATH
+import os, subprocess
 
-import os
 from pathlib import Path
+from src.model import midi_generator as midi_gen
 
-import subprocess
 # RAW_AUDIO_PATH = 'data/raw/busoni_sonata/Busoni_sonata_no2_op_8-BV_61_Scherzo.mp3'
 # PRED_MIDI_PATH = 'output/model_midi/Busoni_sonata_no2_op_8-BV_61_Scherzo_basic_pitch.mid'
 # GT_MIDI_PATH = 'data/raw/busoni_sonata/Busoni_sonata_no2_op_8-BV_61_Scherzo.mid'
 # TMP_PRED_MIDI_PATH = 'output/model_midi/tmp_pred.mid'
 
 
-import argparse
-
-parser = argparse.ArgumentParser()
-parser.add_argument('input', type=str, help='Path to the input audio file')
-parser.add_argument('--output', type=str, required=False, default='output/')
-parser.add_argument('--format', type=str, choices=['midi', 'pdf'], required=False, default='midi')
-args = parser.parse_args()
-
-if __name__=='__main__':
-    
-    audio_file = args.input
-    output_dir = args.output
-
-    base_name = Path(audio_file).stem  # → "song_name"
-    output_base = Path(output_dir) / base_name
-    stem_dir = output_base / "stems"
-    midi_dir = output_base / "midi"
-    score_dir = output_base / "score"
+def process_audio(audio_file, output_path, format):
+    stem_dir = os.path.join(output_path, "stems")
+    midi_dir = os.path.join(output_path, "midi")
+    score_dir = os.path.join(output_path, "score")
 
     os.makedirs(stem_dir, exist_ok=True)
     os.makedirs(midi_dir, exist_ok=True)
@@ -77,4 +52,16 @@ if __name__=='__main__':
             output_dir=str(midi_dir)
         )
 
-        # TODO: Generate score from MIDI and save in `score_dir`
+    # TODO: Generate score from MIDI and save in `score_dir`
+
+
+if __name__=='__main__':
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('input', type=str, help='Path to the input audio file')
+    parser.add_argument('--output', type=str, required=False, default='output/')
+    parser.add_argument('--format', type=str, choices=['midi', 'pdf'], required=False, default='midi')
+    args = parser.parse_args()
+
+    process_audio(args.input, args.output, args.format)
