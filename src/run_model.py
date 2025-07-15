@@ -37,6 +37,8 @@ def process_audio(audio_file, output_path, format):
 
     # import tensorflow as tf
     # tf.keras.backend.clear_session()
+    midis = []
+    instrument_names = []
     for wav_path in Path(stem_dir).iterdir():
         name = Path(wav_path).stem
         print(f"Predicting MidiFile for:{name}")
@@ -47,10 +49,13 @@ def process_audio(audio_file, output_path, format):
         #sf.write(wav_path, wav, 44100)
 
         # Generate MIDI file for this stem
-        midi_gen.transcribe_with_optimal_params(
+        midi, instrument = midi_gen.transcribe_with_optimal_params(
             wav_path=str(wav_path),
             output_dir=str(midi_dir)
         )
+        midis.append(midi)
+        instrument_names.append(instrument)
+    midi_gen.combine_midis(midis, instrument_names).write(os.path.join(midi_dir, "combined.mid"))
 
     # TODO: Generate score from MIDI and save in `score_dir`
 

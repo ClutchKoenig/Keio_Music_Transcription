@@ -1,6 +1,7 @@
+import os
+import pretty_midi
 from basic_pitch.inference import predict, predict_and_save, Model
 from basic_pitch import ICASSP_2022_MODEL_PATH
-import os
 from src.model.model_parameter import INSTRUMENT_PARAMS
 
 # Prototype
@@ -31,17 +32,15 @@ def transcribe_with_optimal_params(wav_path: str, output_dir: str):
 
     output_path = os.path.join(output_dir, f"{instrument}.mid")
     print(f"Found Instrument: {instrument}")
-    predict_midi(
+    return predict_midi(
         audio_path=wav_path,
-        output_path=output_path,
         onset_threshold=params["onset_threshold"],
         frame_threshold=params["frame_threshold"],
         minimum_note_length=params["minimum_note_length"]
-    )
+    ), instrument
 
 def predict_midi(
     audio_path: str,
-    output_path: str,
     onset_threshold: float = 0.5,
     frame_threshold: float = 0.5,
     minimum_note_length: int = 50
@@ -69,9 +68,14 @@ def predict_midi(
         frame_threshold=frame_threshold,
         minimum_note_length=minimum_note_length
     )
-    midi_data.write(output_path)
-    print(f"Saved MIDI: {output_path}")
-    return output_path
+    return midi_data
 
+def combine_midis(midi_list: list[pretty_midi.PrettyMIDI], names: list) -> pretty_midi.PrettyMIDI:
+    combined = pretty_midi.PrettyMIDI()
+    for i, midi in enumerate(midi_list):
+        for inst in midi.instruments:
+            inst.channel = i % 16  # MIDI has 16 channels (0–15)
+            combined.instruments.append(inst)
+    return combined
 
 # run_model.py

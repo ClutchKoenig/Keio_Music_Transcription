@@ -2,8 +2,10 @@ import os, re, tempfile, shutil, subprocess
 from flask import Flask, request, send_file
 from flask_cors import CORS
 from io import BytesIO
-from pyngrok import ngrok
+from pyngrok import ngrok, conf
 from src.run_model import process_audio
+
+conf.get_default().log_event_callback = lambda log: print(f"[NGROK] {log}")
 
 app = Flask(__name__)
 CORS(app)
