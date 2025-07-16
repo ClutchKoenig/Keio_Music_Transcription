@@ -70,11 +70,12 @@ def predict_midi(
     )
     return midi_data
 
-def combine_midis(midi_list: list[pretty_midi.PrettyMIDI], names: list) -> pretty_midi.PrettyMIDI:
+def combine_midis(midi_list: list[pretty_midi.PrettyMIDI], names: list[str]) -> pretty_midi.PrettyMIDI:
     combined = pretty_midi.PrettyMIDI()
-    for i, midi in enumerate(midi_list):
+    for i, (midi, name) in enumerate(zip(midi_list, names)):
         for inst in midi.instruments:
-            inst.channel = i % 16  # MIDI has 16 channels (0–15)
+            inst.name = name
+            inst.channel = i % 16
             combined.instruments.append(inst)
     return combined
 

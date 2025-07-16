@@ -29,7 +29,7 @@ def process_audio(audio_file, output_path, format):
     '''
     #stems = splt.split_audio(audio_file)
     subprocess.run([
-        "/content/music_venv310/bin/python", 
+        "/content/music_venv310/bin/python3.10", 
         "src/utils/split.py", 
         audio_file, 
         "--output", stem_dir
