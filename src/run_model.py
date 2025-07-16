@@ -54,8 +54,12 @@ def process_audio(audio_file, output_path, format):
             wav_path=str(wav_path),
             output_dir=str(midi_dir)
         )
+        midi.write(os.path.join(midi_dir, f"{name}.mid"))
+        
         midis.append(midi)
         instrument_names.append(instrument)
+
+    # Combine all generated MIDI files into one
     midi_gen.combine_midis(midis, instrument_names).write(os.path.join(midi_dir, "combined.mid"))
 
     # TODO: Generate score from MIDI and save in `score_dir`
