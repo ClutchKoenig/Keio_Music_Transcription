@@ -1,11 +1,10 @@
-import os, re, tempfile, shutil, subprocess
-from flask import Flask, request, send_file
+import os, re, tempfile, shutil, subprocess, uuid, threading, time
+from flask import Flask, request, send_file, Response, jsonify
 from flask_cors import CORS
 from io import BytesIO
-from pyngrok import ngrok, conf
+from pyngrok import ngrok
 from src.run_model import process_audio
-
-conf.get_default().log_event_callback = lambda log: print(f"[NGROK] {log}")
+from src.progress_tracker import progress_tracker
 
 app = Flask(__name__)
 CORS(app)
@@ -23,40 +22,90 @@ def convert():
     if not file:
         return {'error': 'No file uploaded'}, 400
 
+    # Generate unique session ID for progress tracking
+    session_id = str(uuid.uuid4())
+    
     with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp_input:
         file.save(tmp_input.name)
         input_path = tmp_input.name
 
     output_dir = tempfile.mkdtemp()
 
-    try:
-        process_audio(input_path, output_dir, format)
+    def process_in_background():
+        try:
+            process_audio(input_path, output_dir, format, session_id)
+        except Exception as e:
+            progress_tracker.error_session(session_id, str(e))
+        finally:
+            # Cleanup will be handled by the progress endpoint
+            pass
 
-        # Rechercher le fichier généré
-        ext = 'mid' if format == 'midi' else 'pdf'
-        search_dir = os.path.join(output_dir, 'midi' if format == 'midi' else 'score')
-        output_files = [f for f in os.listdir(search_dir) if f.endswith(f".{ext}")]
-        if not output_files:
-            return {'error': 'No output file found'}, 500
+    # Start processing in background
+    thread = threading.Thread(target=process_in_background)
+    thread.start()
 
-        output_path = os.path.join(search_dir, output_files[0])
+    return jsonify({
+        'session_id': session_id,
+        'status': 'processing_started'
+    })
 
-        with open(output_path, 'rb') as f:
-            file_data = BytesIO(f.read())
+@app.route('/progress/<session_id>')
+def get_progress(session_id):
+    """Server-Sent Events endpoint for progress updates"""
+    def generate():
+        while True:
+            progress_data = progress_tracker.get_progress(session_id)
+            if progress_data is None:
+                yield f"data: {{'error': 'Session not found'}}\n\n"
+                break
+            
+            import json
+            yield f"data: {json.dumps(progress_data)}\n\n"
+            
+            if progress_data['status'] in ['completed', 'error']:
+                break
+                
+            time.sleep(1)  # Update every second
+    
+    return Response(generate(), mimetype='text/event-stream')
 
-    except subprocess.CalledProcessError:
-        return {'error': 'Processing failed'}, 500
-
-    finally:
-        os.remove(input_path)
-        shutil.rmtree(output_dir)
-
-    return send_file(
-        file_data,
-        as_attachment=True,
-        download_name=f"{file.filename}.{ext}",
-        mimetype='application/octet-stream'
-    )
+@app.route('/download/<session_id>')
+def download_result(session_id):
+    """Download the converted file"""
+    progress_data = progress_tracker.get_progress(session_id)
+    
+    if not progress_data or progress_data['status'] != 'completed':
+        return {'error': 'File not ready or session not found'}, 404
+    
+    # Get the format from the session (we'll need to store this)
+    # For now, let's check both directories
+    output_dir = progress_data.get('output_dir')
+    if not output_dir:
+        return {'error': 'Output directory not found'}, 404
+    
+    # Try MIDI first, then PDF
+    for format_type, ext, subdir in [('midi', 'mid', 'midi'), ('pdf', 'pdf', 'score')]:
+        search_dir = os.path.join(output_dir, subdir)
+        if os.path.exists(search_dir):
+            output_files = [f for f in os.listdir(search_dir) if f.endswith(f".{ext}")]
+            if output_files:
+                output_path = os.path.join(search_dir, output_files[0])
+                
+                with open(output_path, 'rb') as f:
+                    file_data = BytesIO(f.read())
+                
+                # Cleanup
+                progress_tracker.cleanup_session(session_id)
+                shutil.rmtree(output_dir, ignore_errors=True)
+                
+                return send_file(
+                    file_data,
+                    as_attachment=True,
+                    download_name=f"conversion.{ext}",
+                    mimetype='application/octet-stream'
+                )
+    
+    return {'error': 'No output file found'}, 500
 
 @app.route('/')
 def index():

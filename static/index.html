@@ -50,6 +50,20 @@
                 <div id="convertSpinner" class="hidden animate-spin h-6 w-6 border-4 border-white border-t-transparent rounded-full"></div>
             </button>
 
+            <!-- Progress section -->
+            <div id="progressSection" class="mt-6 hidden">
+                <div class="mb-2">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-medium text-gray-700">Processing...</span>
+                        <span id="progressPercent" class="text-sm text-gray-500">0%</span>
+                    </div>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2.5 mb-3">
+                    <div id="progressBar" class="bg-blue-600 h-2.5 rounded-full transition-all duration-300 ease-out" style="width: 0%"></div>
+                </div>
+                <p id="progressStep" class="text-sm text-gray-600 text-center">Initializing...</p>
+            </div>
+
             <!-- Result section -->
             <div id="result" class="mt-6 hidden">
                 <div id="loading" class="flex justify-center">

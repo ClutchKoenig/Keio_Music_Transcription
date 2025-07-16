@@ -14,6 +14,10 @@ const convertBtn = document.getElementById('convertBtn');
 const convertText = document.getElementById('convertText');
 const convertSpinner = document.getElementById('convertSpinner');
 const fileNameSpan = document.getElementById('fileName');
+const progressSection = document.getElementById('progressSection');
+const progressBar = document.getElementById('progressBar');
+const progressPercent = document.getElementById('progressPercent');
+const progressStep = document.getElementById('progressStep');
 
 // Drag & drop
 uploadArea.addEventListener('dragover', (e) => {
@@ -58,13 +62,16 @@ convertBtn.addEventListener('click', async () => {
     formData.append('audio', file);
     formData.append('format', format);
 
+    // Show loading state
     convertText.classList.add('hidden');
     convertSpinner.classList.remove('hidden');
+    convertBtn.disabled = true;
 
     try {
         const headers = new Headers();
         headers.append('ngrok-skip-browser-warning', 'true');
 
+        // Start the conversion process
         const response = await fetch('/convert', {
             method: 'POST',
             headers: headers,
@@ -72,25 +79,101 @@ convertBtn.addEventListener('click', async () => {
         });
 
         if (!response.ok) {
-            throw new Error('Conversion failed');
+            throw new Error('Conversion failed to start');
         }
 
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `conversion.${format}`;
-        a.click();
-        window.URL.revokeObjectURL(url);
+        const result = await response.json();
+        const sessionId = result.session_id;
+
+        // Show progress section
+        progressSection.classList.remove('hidden');
+        
+        // Start listening for progress updates
+        listenForProgress(sessionId, format);
 
     } catch (error) {
         console.error(error);
         alert('An error occurred during conversion.');
-    } finally {
-        convertText.classList.remove('hidden');
-        convertSpinner.classList.add('hidden');
+        resetUI();
     }
 });
+
+function listenForProgress(sessionId, format) {
+    const eventSource = new EventSource(`/progress/${sessionId}`);
+    
+    eventSource.onmessage = function(event) {
+        try {
+            const data = JSON.parse(event.data);
+            
+            if (data.error) {
+                throw new Error(data.error);
+            }
+            
+            // Update progress bar
+            const percentage = Math.round((data.progress / data.total) * 100);
+            progressBar.style.width = `${percentage}%`;
+            progressPercent.textContent = `${percentage}%`;
+            progressStep.textContent = data.current_step;
+            
+            // Check if completed
+            if (data.status === 'completed') {
+                eventSource.close();
+                downloadFile(sessionId, format);
+            } else if (data.status === 'error') {
+                eventSource.close();
+                throw new Error(data.current_step);
+            }
+            
+        } catch (error) {
+            eventSource.close();
+            console.error('Progress update error:', error);
+            alert('An error occurred during processing: ' + error.message);
+            resetUI();
+        }
+    };
+    
+    eventSource.onerror = function(event) {
+        eventSource.close();
+        console.error('EventSource failed');
+        alert('Connection to server lost during processing.');
+        resetUI();
+    };
+}
+
+async function downloadFile(sessionId, format) {
+    try {
+        const response = await fetch(`/download/${sessionId}`);
+        
+        if (!response.ok) {
+            throw new Error('Download failed');
+        }
+        
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `conversion.${format === 'midi' ? 'mid' : format}`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+        
+        resetUI();
+        
+    } catch (error) {
+        console.error('Download error:', error);
+        alert('Error downloading the converted file.');
+        resetUI();
+    }
+}
+
+function resetUI() {
+    convertText.classList.remove('hidden');
+    convertSpinner.classList.add('hidden');
+    convertBtn.disabled = false;
+    progressSection.classList.add('hidden');
+    progressBar.style.width = '0%';
+    progressPercent.textContent = '0%';
+    progressStep.textContent = 'Initializing...';
+}
 
 // GSAP animation
 gsap.from('h1', { y: -50, opacity: 0, duration: 1, ease: 'power2.out' });
