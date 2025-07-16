@@ -8,6 +8,7 @@ import os, subprocess
 
 from pathlib import Path
 from src.model import midi_generator as midi_gen
+from src.data import postprocess as post_proc
 
 # RAW_AUDIO_PATH = 'data/raw/busoni_sonata/Busoni_sonata_no2_op_8-BV_61_Scherzo.mp3'
 # PRED_MIDI_PATH = 'output/model_midi/Busoni_sonata_no2_op_8-BV_61_Scherzo_basic_pitch.mid'
@@ -58,6 +59,7 @@ def process_audio(audio_file, output_path, format):
     midi_gen.combine_midis(midis, instrument_names).write(os.path.join(midi_dir, "combined.mid"))
 
     # TODO: Generate score from MIDI and save in `score_dir`
+    post_proc.midi_treatment("midi_dir/combined.mid")
 
 
 if __name__=='__main__':
