@@ -80,12 +80,15 @@ def process_audio(audio_file, output_path, format, session_id=None):
             wav_path=str(wav_path),
             output_dir=str(midi_dir)
         )
+        midi.write(os.path.join(midi_dir, f"{name}.mid"))
+        
         midis.append(midi)
         instrument_names.append(instrument)
         
     if session_id:
         progress_tracker.update_progress(session_id, 75, "Combining MIDI files...")
         
+    # Combine all generated MIDI files into one
     midi_gen.combine_midis(midis, instrument_names).write(os.path.join(midi_dir, "combined.mid"))
 
     if session_id:
