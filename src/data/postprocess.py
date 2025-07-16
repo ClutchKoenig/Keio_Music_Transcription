@@ -71,3 +71,45 @@ def midi_treatment(midi_file, output_dir):
         subprocess.run(['xvfb-run', '--auto-servernum', '--server-args=-screen 0 640x480x24',str(us['musicxmlPath']), musicxml_path, '-o', pdf_path], check=True)
     except subprocess.CalledProcessError as e:
         raise RuntimeError(f"MuseScore PDF generation failed:\n{e}")
+    
+
+def multi_midi_treatment(midi_files, output_dir):
+    us = environment.UserSettings()
+    us['musicxmlPath'] = '/usr/bin/mscore3'
+    us['musescoreDirectPNGPath'] = '/usr/bin/mscore3'
+
+    full_score = stream.Score()
+    full_score.metadata = metadata.Metadata()
+    full_score.metadata.title = " + ".join([os.path.splitext(os.path.basename(f))[0] for f in midi_files])
+
+    for midi_path in midi_files:
+        part_score = converter.parse(midi_path)
+        if part_score.__class__.__name__ == "Score":
+            part = part_score.parts[0]
+        else:
+            part = part_score
+
+        if not any(isinstance(el, instrument.Instrument) for el in part.recurse()):
+            name_guess = os.path.splitext(os.path.basename(midi_path))[0]
+            part.insert(0, instrument.fromString(name_guess))
+
+        full_score.append(part)
+
+    tempi = list(full_score.recurse().getElementsByClass(tempo.MetronomeMark))
+    if len(tempi) > 1:
+        for tm in tempi[1:]:
+            parent = tm.getContextByClass('Measure')
+            if parent:
+                parent.remove(tm)
+            else:
+                tm.activeSite.remove(tm)
+
+    musicxml_path = os.path.join(output_dir, "score.musicxml")
+    full_score.write('musicxml', fp=musicxml_path)
+
+    # Call MuseScore via CLI to convert XML to PDF without GUI
+    pdf_path = os.path.join(output_dir, "score.pdf")
+    try:
+        subprocess.run(['xvfb-run', '--auto-servernum', '--server-args=-screen 0 640x480x24',str(us['musicxmlPath']), musicxml_path, '-o', pdf_path], check=True)
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(f"MuseScore PDF generation failed:\n{e}")
