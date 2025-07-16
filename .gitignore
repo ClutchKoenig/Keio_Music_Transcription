@@ -7,6 +7,7 @@ __pycache__/
 **/pretrained_models/
 
 # Model training folders
+data/
 output/
 train_history/
 !train_history/README.md
