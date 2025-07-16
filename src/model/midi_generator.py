@@ -73,10 +73,12 @@ def predict_midi(
 def combine_midis(midi_list: list[pretty_midi.PrettyMIDI], names: list[str]) -> pretty_midi.PrettyMIDI:
     combined = pretty_midi.PrettyMIDI()
     for i, (midi, name) in enumerate(zip(midi_list, names)):
-        for inst in midi.instruments:
-            inst.name = name
-            inst.channel = i % 16
-            combined.instruments.append(inst)
+        src_inst = midi.instruments[0]
+        new_inst = pretty_midi.Instrument(program=i, name=name)
+        new_inst.notes = src_inst.notes
+        new_inst.control_changes = src_inst.control_changes
+        new_inst.pitch_bends = src_inst.pitch_bends
+        combined.instruments.append(new_inst)
     return combined
 
 # run_model.py
