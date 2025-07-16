@@ -2,7 +2,7 @@ import os
 import glob
 from music21 import converter, stream, instrument, metadata, environment, tempo
 from PIL import Image
-
+import subprocess
 
 def add_margins_and_white_bg(image_path, top=20, right=60, bottom=20, left=60):
     img = Image.open(image_path).convert("RGBA")
@@ -51,12 +51,23 @@ def midi_treatment(midi_file, output_dir):
                 parent.remove(tm)
             else:
                 tm.activeSite.remove(tm)
+    # ================= Convert to PDF directly via musicxml=============
+    # os.makedirs(output_dir, exist_ok=True)
+    # output_path = os.path.join(output_dir, "score.png")
+    # score.write('musicxml.png', fp=output_path)
 
-    os.makedirs(output_dir, exist_ok=True)
-    output_path = os.path.join(output_dir, "score.png")
-    score.write('musicxml.png', fp=output_path)
+    # fix_all_images(output_dir)
 
-    fix_all_images(output_dir)
+    # output_pdf = os.path.join(output_dir, "score.pdf")
+    # pngs_to_pdf(output_dir, output_pdf)
+    # fix_all_images()
+    # ======================================================================
+    musicxml_path = os.path.join(output_dir, "score.musicxml")
+    score.write('musicxml', fp=musicxml_path)
 
-    output_pdf = os.path.join(output_dir, "score.pdf")
-    pngs_to_pdf(output_dir, output_pdf)
+    # Call MuseScore via CLI to convert XML to PDF without GUI
+    pdf_path = os.path.join(output_dir, "score.pdf")
+    try:
+        subprocess.run(['xvfb-run', '--auto-servernum', '--server-args=-screen 0 640x480x24',str(us['musicxmlPath']), musicxml_path, '-o', pdf_path], check=True)
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(f"MuseScore PDF generation failed:\n{e}")
