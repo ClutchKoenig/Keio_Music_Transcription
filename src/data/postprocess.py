@@ -22,6 +22,20 @@ def fix_all_images(output_dir, png_prefix="score"):
         add_margins_and_white_bg(path)
 
 
+def pngs_to_pdf(png_dir, pdf_path, png_prefix="score"):
+    png_prefix = os.path.join(png_dir, png_prefix)
+    png_files = sorted(glob.glob(f"{png_prefix}*.png"))
+
+    images = [Image.open(f).convert("RGB") for f in png_files]
+
+    first_image = images[0]
+    other_images = images[1:]
+
+    first_image.save(
+        pdf_path, save_all=True, append_images=other_images
+    )
+
+
 def midi_treatment(midi_file, output_dir):
     us = environment.UserSettings()
     us['musicxmlPath'] = '/usr/bin/mscore3'
@@ -43,3 +57,6 @@ def midi_treatment(midi_file, output_dir):
     score.write('musicxml.png', fp=output_path)
 
     fix_all_images(output_dir)
+
+    output_pdf = os.path.join(output_dir, "score.pdf")
+    pngs_to_pdf(output_dir, output_pdf)
