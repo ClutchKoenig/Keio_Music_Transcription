@@ -24,7 +24,7 @@ def fix_all_images():
     for path in png_files:
         add_margins_and_white_bg(path)
 
-def midi_treatment(midi_file):
+def midi_treatment(midi_file, output_dir):
     us = environment.UserSettings()
     us['musicxmlPath'] = '/usr/bin/mscore3'
     us['musescoreDirectPNGPath'] = '/usr/bin/mscore3'
@@ -54,8 +54,7 @@ def midi_treatment(midi_file):
             else:
                 tm.activeSite.remove(tm)
 
-
-    os.makedirs(os.path.dirname("score_dir"), exist_ok=True)
+    os.makedirs(output_dir, exist_ok=True)
     score.write('musicxml.png', fp=f"score.png")
 
     fix_all_images()
