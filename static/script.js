@@ -150,11 +150,14 @@ async function downloadFile(sessionId, format) {
         const a = document.createElement('a');
         a.href = url;
         
-        // Set appropriate filename based on format
-        if (format === 'both') {
-            a.download = 'conversion.zip';
-        } else {
-            a.download = `conversion.${format === 'midi' ? 'mid' : format}`;
+        // Let the server determine the filename via Content-Disposition header
+        // Extract filename from response headers if available
+        const contentDisposition = response.headers.get('Content-Disposition');
+        if (contentDisposition) {
+            const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+            if (filenameMatch && filenameMatch[1]) {
+                a.download = filenameMatch[1].replace(/['"]/g, '');
+            }
         }
         
         a.click();
