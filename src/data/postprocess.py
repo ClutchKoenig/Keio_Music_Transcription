@@ -82,25 +82,34 @@ def midi_treatment(midi_file, output_dir):
         raise RuntimeError(f"MuseScore PDF generation failed:\n{e}")
     
 
-def multi_midi_treatment(midi_files, output_dir):
+def multi_midi_treatment(midi_dir, output_dir):
     us = environment.UserSettings()
     us['musicxmlPath'] = '/usr/bin/mscore3'
     us['musescoreDirectPNGPath'] = '/usr/bin/mscore3'
 
     full_score = stream.Score()
     full_score.metadata = metadata.Metadata()
+    
+    # Get all MIDI files from the directory
+    midi_files = sorted(glob.glob(os.path.join(midi_dir, "*.mid")))
+    if not midi_files:
+        raise ValueError(f"No MIDI files found in {midi_dir}")
+    
     full_score.metadata.title = " + ".join([get_midi_name(f) for f in midi_files])
 
-    for midi in midi_files:
+    for midi_file in midi_files:
         
-        if isinstance(midi, stream.Score):
-            part = midi.parts[0]
+        # Parse MIDI file directly with music21
+        parsed_midi = converter.parse(midi_file)
+        
+        if isinstance(parsed_midi, stream.Score):
+            part = parsed_midi.parts[0]
         else:
-            part = midi
+            part = parsed_midi
 
         for instr in part.recurse().getElementsByClass('Instrument'):
             instr.activeSite.remove(instr)
-        name_guess = get_midi_name(midi)
+        name_guess = get_midi_name(midi_file)
         instr = instrument.Instrument()
         instr.partName = name_guess
         instr.partAbbreviation = name_guess[:3].capitalize()

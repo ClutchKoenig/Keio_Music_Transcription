@@ -87,9 +87,6 @@ def process_audio(audio_file, output_path, format, session_id=None):
         
     if session_id:
         progress_tracker.update_progress(session_id, 75, "Combining MIDI files...")
-        
-    # Combine all generated MIDI files into one
-    midi_gen.combine_midis(midis, instrument_names).write(os.path.join(midi_dir, "combined.mid"))
 
     if session_id:
         progress_tracker.update_progress(session_id, 85, "Generating score from MIDI...")
@@ -97,7 +94,10 @@ def process_audio(audio_file, output_path, format, session_id=None):
     # Generate score from MIDI and save in `score_dir`
     # Always generate PDF for 'both' format, or when specifically requested
     if format in ['pdf', 'both']:
-        post_proc.multi_midi_treatment(midis, score_dir)
+        post_proc.multi_midi_treatment(midi_dir, score_dir)
+
+    # Combine all generated MIDI files into one
+    midi_gen.combine_midis(midis, instrument_names).write(os.path.join(midi_dir, "combined.mid"))
     
     if session_id:
         progress_tracker.complete_session(session_id)
