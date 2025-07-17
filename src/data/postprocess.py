@@ -91,26 +91,21 @@ def multi_midi_treatment(midi_files, output_dir):
     full_score.metadata = metadata.Metadata()
     full_score.metadata.title = " + ".join([get_midi_name(f) for f in midi_files])
 
-    for midi_path in midi_files:
-        part_score = converter.parse(midi_path)
+    for midi in midi_files:
         
-        if isinstance(part_score, stream.Score):
-            part = part_score.parts[0]
+        if isinstance(midi, stream.Score):
+            part = midi.parts[0]
         else:
-            part = part_score
+            part = midi
 
         for instr in part.recurse().getElementsByClass('Instrument'):
             instr.activeSite.remove(instr)
-        name_guess = get_midi_name(midi_path)
+        name_guess = get_midi_name(midi)
         instr = instrument.Instrument()
         instr.partName = name_guess
         instr.partAbbreviation = name_guess[:3].capitalize()
         instr.instrumentName = name_guess 
         part.insert(0, instr)
-
-        if not any(isinstance(el, instrument.Instrument) for el in part.recurse()):
-            name_guess = os.path.splitext(os.path.basename(midi_path))[0]
-            part.insert(0, instrument.fromString(name_guess))
 
         full_score.append(part)
 
