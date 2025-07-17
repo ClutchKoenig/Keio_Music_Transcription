@@ -95,8 +95,8 @@ def process_audio(audio_file, output_path, format, session_id=None):
         progress_tracker.update_progress(session_id, 85, "Generating score from MIDI...")
 
     # TODO: Generate score from MIDI and save in `score_dir`
-    post_proc.midi_treatment(os.path.join(midi_dir, "combined.mid"), score_dir)
-    
+    # post_proc.midi_treatment(os.path.join(midi_dir, "combined.mid"), score_dir)
+    post_proc.multi_midi_treatment(midis, score_dir)    
     if session_id:
         progress_tracker.complete_session(session_id)
 
