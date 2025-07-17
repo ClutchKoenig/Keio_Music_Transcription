@@ -90,7 +90,6 @@ def multi_midi_treatment(midi_dir, output_dir):
     full_score = stream.Score()
     full_score.metadata = metadata.Metadata()
     
-    # Get all MIDI files from the directory
     midi_files = sorted(glob.glob(os.path.join(midi_dir, "*.mid")))
     if not midi_files:
         raise ValueError(f"No MIDI files found in {midi_dir}")
@@ -98,17 +97,12 @@ def multi_midi_treatment(midi_dir, output_dir):
     full_score.metadata.title = " + ".join([get_midi_name(f) for f in midi_files])
 
     for midi_file in midi_files:
-        
-        # Parse MIDI file directly with music21
         parsed_midi = converter.parse(midi_file)
-        
-        if isinstance(parsed_midi, stream.Score):
-            part = parsed_midi.parts[0]
-        else:
-            part = parsed_midi
+        part = parsed_midi.parts[0] if isinstance(parsed_midi, stream.Score) else parsed_midi
 
         for instr in part.recurse().getElementsByClass('Instrument'):
             instr.activeSite.remove(instr)
+
         name_guess = get_midi_name(midi_file)
         instr = instrument.Instrument()
         instr.partName = name_guess
@@ -118,6 +112,7 @@ def multi_midi_treatment(midi_dir, output_dir):
 
         full_score.append(part)
 
+    # Remove duplicate tempi
     tempi = list(full_score.recurse().getElementsByClass(tempo.MetronomeMark))
     if len(tempi) > 1:
         for tm in tempi[1:]:
@@ -127,15 +122,17 @@ def multi_midi_treatment(midi_dir, output_dir):
             else:
                 tm.activeSite.remove(tm)
 
+    os.makedirs(output_dir, exist_ok=True)
+
     musicxml_path = os.path.join(output_dir, "score.musicxml")
     full_score.write('musicxml', fp=musicxml_path)
 
-    os.makedirs(output_dir, exist_ok=True)
-    output_path = os.path.join(output_dir, "score.png")
-    full_score.write('musicxml.png', fp=output_path)
-
-    fix_all_images(output_dir)
-
-    output_pdf = os.path.join(output_dir, "score.pdf")
-    pngs_to_pdf(output_dir, output_pdf)
+    pdf_path = os.path.join(output_dir, "score.pdf")
+    try:
+        subprocess.run([
+            'xvfb-run', '--auto-servernum', '--server-args=-screen 0 640x480x24',
+            str(us['musicxmlPath']), musicxml_path, '-o', pdf_path
+        ], check=True)
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(f"MuseScore PDF generation failed:\n{e}")
     
