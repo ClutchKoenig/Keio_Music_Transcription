@@ -4,6 +4,16 @@ from music21 import converter, stream, instrument, metadata, environment, tempo
 from PIL import Image
 import subprocess
 
+
+def get_midi_name(midi):
+    if isinstance(midi, str): 
+        return os.path.splitext(os.path.basename(midi))[0].capitalize()
+    elif hasattr(midi, 'filename') and midi.filename: 
+        return os.path.splitext(os.path.basename(midi.filename))[0].capitalize()
+    else:
+        return "Part" 
+
+
 def add_margins_and_white_bg(image_path, top=20, right=60, bottom=20, left=60):
     img = Image.open(image_path).convert("RGBA")
     new_width = img.width + left + right
@@ -79,14 +89,10 @@ def multi_midi_treatment(midi_files, output_dir):
 
     full_score = stream.Score()
     full_score.metadata = metadata.Metadata()
-    full_score.metadata.title = " + ".join([os.path.splitext(os.path.basename(f))[0].capitalize() for f in midi_files])
+    full_score.metadata.title = " + ".join([get_midi_name(f) for f in midi_files])
 
     for midi_path in midi_files:
         part_score = converter.parse(midi_path)
-        if part_score.__class__.__name__ == "Score":
-            part = part_score.parts[0]
-        else:
-            part = part_score
         
         if isinstance(part_score, stream.Score):
             part = part_score.parts[0]
@@ -95,7 +101,7 @@ def multi_midi_treatment(midi_files, output_dir):
 
         for instr in part.recurse().getElementsByClass('Instrument'):
             instr.activeSite.remove(instr)
-        name_guess = os.path.splitext(os.path.basename(midi_path))[0].capitalize()
+        name_guess = get_midi_name(midi_path)
         instr = instrument.Instrument()
         instr.partName = name_guess
         instr.partAbbreviation = name_guess[:3].capitalize()
