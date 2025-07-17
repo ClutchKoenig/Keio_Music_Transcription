@@ -92,21 +92,17 @@ def download_result(session_id):
         zip_buffer = BytesIO()
         
         with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-            # Add MIDI files
+            # Add combined.mid file (renamed to original_filename.mid)
             midi_dir = os.path.join(output_dir, 'midi')
-            if os.path.exists(midi_dir):
-                midi_files = [f for f in os.listdir(midi_dir) if f.endswith('.mid')]
-                for midi_file in midi_files:
-                    midi_path = os.path.join(midi_dir, midi_file)
-                    zip_file.write(midi_path, f'midi/{midi_file}')
+            combined_midi_path = os.path.join(midi_dir, 'combined.mid')
+            if os.path.exists(combined_midi_path):
+                zip_file.write(combined_midi_path, f'{original_filename}.mid')
             
-            # Add PDF file
+            # Add score.pdf file (renamed to original_filename.pdf)
             score_dir = os.path.join(output_dir, 'score')
-            if os.path.exists(score_dir):
-                pdf_files = [f for f in os.listdir(score_dir) if f.endswith('.pdf')]
-                for pdf_file in pdf_files:
-                    pdf_path = os.path.join(score_dir, pdf_file)
-                    zip_file.write(pdf_path, f'score/{pdf_file}')
+            score_pdf_path = os.path.join(score_dir, 'score.pdf')
+            if os.path.exists(score_pdf_path):
+                zip_file.write(score_pdf_path, f'{original_filename}.pdf')
         
         zip_buffer.seek(0)
         
