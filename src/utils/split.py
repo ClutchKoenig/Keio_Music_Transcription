@@ -10,6 +10,8 @@ RMS_DEFAULT = 0.005
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Split audio into stems using Spleeter.")
     parser.add_argument("file", help="Path to input audio file")
+    parser.add_argument("--remove_drums", action="store_true",
+                        help="Remove drums stem from output")
     parser.add_argument("--output", type=str, default="output/")
     parser.add_argument("--nb_stems", type=int, default=NB_STEMS_DEFAULT, 
                         help="Number of stems to separate (2, 4, or 5)")
@@ -81,16 +83,17 @@ def split_audio(
 def split_and_write(
         input_file: str, 
         output_dir: str = "output/",
-        nb_stems=NB_STEMS_DEFAULT, 
-        prop_decrease=PROP_DECREASE_DEFAULT, 
-        rms=RMS_DEFAULT,
+        nb_stems: int = NB_STEMS_DEFAULT,
+        prop_decrease: float = PROP_DECREASE_DEFAULT,
+        rms: float = RMS_DEFAULT,
+        remove_drums: bool = False,
     ):
     prediction = split_audio(input_file, nb_stems, prop_decrease, rms)
 
-    song_name = Path(input_file).stem
-    filename = os.path.splitext(os.path.basename(input_file))[0]
-    os.makedirs(output_dir, exist_ok=True)
+    if remove_drums and 'drums' in prediction:
+        del prediction['drums']
 
+    os.makedirs(output_dir, exist_ok=True)
     for stem, audio in prediction.items():
         output_file = os.path.join(output_dir, f"{stem}.wav")
         sf.write(output_file, audio, 44100)
@@ -99,4 +102,11 @@ def split_and_write(
 
 
 if __name__ == "__main__":
-    split_and_write(args.file, args.output, args.nb_stems, args.prop_decrease, args.rms)
+    split_and_write(
+        args.file, 
+        args.output, 
+        args.nb_stems, 
+        args.prop_decrease, 
+        args.rms, 
+        args.remove_drums,
+    )

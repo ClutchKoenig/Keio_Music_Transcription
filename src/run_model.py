@@ -49,7 +49,8 @@ def process_audio(audio_file, output_path, format, session_id=None, original_fil
         "/content/music_venv310/bin/python3.10", 
         "src/utils/split.py", 
         audio_file, 
-        "--output", stem_dir
+        "--remove_drums",
+        "--output", stem_dir,
     ], check=True)
 
     if session_id:
