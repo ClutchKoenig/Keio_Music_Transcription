@@ -1,4 +1,6 @@
 import os
+os.environ["QT_QPA_PLATFORM"] = "offscreen"
+
 import glob
 from music21 import converter, stream, instrument, metadata, environment, tempo
 from PIL import Image
