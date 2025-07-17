@@ -84,7 +84,7 @@ def midi_treatment(midi_file, output_dir):
         raise RuntimeError(f"MuseScore PDF generation failed:\n{e}")
     
 
-def multi_midi_treatment(midi_dir, output_dir):
+def multi_midi_treatment(midi_dir, output_dir, original_filename=None):
     us = environment.UserSettings()
     us['musicxmlPath'] = '/usr/bin/mscore3'
     us['musescoreDirectPNGPath'] = '/usr/bin/mscore3'
@@ -96,7 +96,10 @@ def multi_midi_treatment(midi_dir, output_dir):
     if not midi_files:
         raise ValueError(f"No MIDI files found in {midi_dir}")
     
-    full_score.metadata.title = " + ".join([get_midi_name(f) for f in midi_files])
+    if original_filename != None:
+        full_score.metadata.title = original_filename
+    else :
+        full_score.metadata.title = " + ".join([get_midi_name(f) for f in midi_files])
 
     for midi_file in midi_files:
         parsed_midi = converter.parse(midi_file)

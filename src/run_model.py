@@ -97,7 +97,7 @@ def process_audio(audio_file, output_path, format, session_id=None, original_fil
     # Generate score from MIDI and save in `score_dir`
     # Always generate PDF for 'both' format, or when specifically requested
     if format in ['pdf', 'both']:
-        post_proc.multi_midi_treatment(midi_dir, score_dir)
+        post_proc.multi_midi_treatment(midi_dir, score_dir, original_filename)
 
     # Combine all generated MIDI files into one
     midi_gen.combine_midis(midis, instrument_names).write(os.path.join(midi_dir, "combined.mid"))
