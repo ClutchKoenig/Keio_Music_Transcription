@@ -85,8 +85,9 @@ convertBtn.addEventListener('click', async () => {
         const result = await response.json();
         const sessionId = result.session_id;
 
-        // Show progress section
+        // Show progress section and hide convert button
         progressSection.classList.remove('hidden');
+        convertBtn.classList.add('hidden');
         
         // Start listening for progress updates
         listenForProgress(sessionId, format);
@@ -176,6 +177,7 @@ function resetUI() {
     convertText.classList.remove('hidden');
     convertSpinner.classList.add('hidden');
     convertBtn.disabled = false;
+    convertBtn.classList.remove('hidden');
     progressSection.classList.add('hidden');
     progressBar.style.width = '0%';
     progressPercent.textContent = '0%';
