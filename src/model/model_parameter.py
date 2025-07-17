@@ -1,14 +1,14 @@
 INSTRUMENT_PARAMS = {
     "piano": {
         #omtimized 
-        "onset_threshold": 0.65,
-        "frame_threshold": 0.5,
-        "minimum_note_length": 70
+        "onset_threshold": 0.6751334229553586,
+        "frame_threshold": 0.46203094059759675,
+        "minimum_note_length": 77
     },
     "vocals": {
-        "onset_threshold": 0.6,
-        "frame_threshold": 0.6,
-        "minimum_note_length": 80
+        "onset_threshold": 0.6743,
+        "frame_threshold": 0.53234,
+        "minimum_note_length": 116
     },
     "drums": {
         "onset_threshold": 0.3,
