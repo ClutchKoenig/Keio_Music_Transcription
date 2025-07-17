@@ -22,6 +22,9 @@ def convert():
     if not file:
         return {'error': 'No file uploaded'}, 400
 
+    # Extract original filename without extension
+    original_filename = os.path.splitext(file.filename)[0] if file.filename else "converted"
+
     # Generate unique session ID for progress tracking
     session_id = str(uuid.uuid4())
     
@@ -33,7 +36,7 @@ def convert():
 
     def process_in_background():
         try:
-            process_audio(input_path, output_dir, format, session_id)
+            process_audio(input_path, output_dir, format, session_id, original_filename)
         except Exception as e:
             progress_tracker.error_session(session_id, str(e))
         finally:
@@ -79,6 +82,7 @@ def download_result(session_id):
     
     output_dir = progress_data.get('output_dir')
     format_type = progress_data.get('format')
+    original_filename = progress_data.get('original_filename', 'converted')
     
     if not output_dir:
         return {'error': 'Output directory not found'}, 404
@@ -113,7 +117,7 @@ def download_result(session_id):
         return send_file(
             zip_buffer,
             as_attachment=True,
-            download_name="conversion.zip",
+            download_name=f"{original_filename}.zip",
             mimetype='application/zip'
         )
     
@@ -137,7 +141,7 @@ def download_result(session_id):
                         return send_file(
                             file_data,
                             as_attachment=True,
-                            download_name=f"conversion.{ext}",
+                            download_name=f"{original_filename}.{ext}",
                             mimetype='application/octet-stream'
                         )
     

@@ -16,7 +16,7 @@ from src.data import postprocess as post_proc
 # TMP_PRED_MIDI_PATH = 'output/model_midi/tmp_pred.mid'
 
 
-def process_audio(audio_file, output_path, format, session_id=None):
+def process_audio(audio_file, output_path, format, session_id=None, original_filename=None):
     from src.progress_tracker import progress_tracker
     
     if session_id:
@@ -35,6 +35,8 @@ def process_audio(audio_file, output_path, format, session_id=None):
     if session_id:
         progress_tracker._progress_data[session_id]['output_dir'] = output_path
         progress_tracker._progress_data[session_id]['format'] = format
+        if original_filename:
+            progress_tracker._progress_data[session_id]['original_filename'] = original_filename
 
     '''
     Split the main audio into seperate instrument stems
