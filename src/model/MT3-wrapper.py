@@ -1,5 +1,8 @@
 import functools
 import os
+import sys
+
+sys.path.append(os.path.abspath('mt3'))  # relative to project root
 
 import numpy as np
 import tensorflow.compat.v2 as tf
