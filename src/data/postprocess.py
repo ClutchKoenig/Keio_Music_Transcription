@@ -92,7 +92,7 @@ def multi_midi_treatment(midi_files, output_dir):
     full_score.metadata.title = " + ".join([get_midi_name(f) for f in midi_files])
 
     for midi_path in midi_files:
-        # part_score = converter.parse(midi_path)
+        part_score = converter.parse(midi_path)
         
         if isinstance(part_score, stream.Score):
             part = part_score.parts[0]

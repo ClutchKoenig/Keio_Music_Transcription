@@ -152,7 +152,14 @@ async function downloadFile(sessionId, format) {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `conversion.${format === 'midi' ? 'mid' : format}`;
+        
+        // Set appropriate filename based on format
+        if (format === 'both') {
+            a.download = 'conversion.zip';
+        } else {
+            a.download = `conversion.${format === 'midi' ? 'mid' : format}`;
+        }
+        
         a.click();
         window.URL.revokeObjectURL(url);
         

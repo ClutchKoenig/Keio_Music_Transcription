@@ -1,4 +1,4 @@
-import os, re, tempfile, shutil, subprocess, uuid, threading, time
+import os, re, tempfile, shutil, subprocess, uuid, threading, time, zipfile
 from flask import Flask, request, send_file, Response, jsonify
 from flask_cors import CORS
 from io import BytesIO
@@ -17,7 +17,7 @@ def add_ngrok_header(response):
 @app.route('/convert', methods=['POST'])
 def convert():
     file = request.files.get('audio')
-    format = request.form.get('format')  # 'midi' or 'pdf'
+    format = request.form.get('format')  # 'midi', 'pdf', or 'both'
 
     if not file:
         return {'error': 'No file uploaded'}, 400
@@ -77,33 +77,69 @@ def download_result(session_id):
     if not progress_data or progress_data['status'] != 'completed':
         return {'error': 'File not ready or session not found'}, 404
     
-    # Get the format from the session (we'll need to store this)
-    # For now, let's check both directories
     output_dir = progress_data.get('output_dir')
+    format_type = progress_data.get('format')
+    
     if not output_dir:
         return {'error': 'Output directory not found'}, 404
     
-    # Try MIDI first, then PDF
-    for format_type, ext, subdir in [('midi', 'mid', 'midi'), ('pdf', 'pdf', 'score')]:
-        search_dir = os.path.join(output_dir, subdir)
-        if os.path.exists(search_dir):
-            output_files = [f for f in os.listdir(search_dir) if f.endswith(f".{ext}")]
-            if output_files:
-                output_path = os.path.join(search_dir, output_files[0])
-                
-                with open(output_path, 'rb') as f:
-                    file_data = BytesIO(f.read())
-                
-                # Cleanup
-                progress_tracker.cleanup_session(session_id)
-                shutil.rmtree(output_dir, ignore_errors=True)
-                
-                return send_file(
-                    file_data,
-                    as_attachment=True,
-                    download_name=f"conversion.{ext}",
-                    mimetype='application/octet-stream'
-                )
+    if format_type == 'both':
+        # Create a zip file containing both MIDI and PDF
+        zip_buffer = BytesIO()
+        
+        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+            # Add MIDI files
+            midi_dir = os.path.join(output_dir, 'midi')
+            if os.path.exists(midi_dir):
+                midi_files = [f for f in os.listdir(midi_dir) if f.endswith('.mid')]
+                for midi_file in midi_files:
+                    midi_path = os.path.join(midi_dir, midi_file)
+                    zip_file.write(midi_path, f'midi/{midi_file}')
+            
+            # Add PDF file
+            score_dir = os.path.join(output_dir, 'score')
+            if os.path.exists(score_dir):
+                pdf_files = [f for f in os.listdir(score_dir) if f.endswith('.pdf')]
+                for pdf_file in pdf_files:
+                    pdf_path = os.path.join(score_dir, pdf_file)
+                    zip_file.write(pdf_path, f'score/{pdf_file}')
+        
+        zip_buffer.seek(0)
+        
+        # Cleanup
+        progress_tracker.cleanup_session(session_id)
+        shutil.rmtree(output_dir, ignore_errors=True)
+        
+        return send_file(
+            zip_buffer,
+            as_attachment=True,
+            download_name="conversion.zip",
+            mimetype='application/zip'
+        )
+    
+    else:
+        # Original logic for single format
+        for format_check, ext, subdir in [('midi', 'mid', 'midi'), ('pdf', 'pdf', 'score')]:
+            if format_type == format_check:
+                search_dir = os.path.join(output_dir, subdir)
+                if os.path.exists(search_dir):
+                    output_files = [f for f in os.listdir(search_dir) if f.endswith(f".{ext}")]
+                    if output_files:
+                        output_path = os.path.join(search_dir, output_files[0])
+                        
+                        with open(output_path, 'rb') as f:
+                            file_data = BytesIO(f.read())
+                        
+                        # Cleanup
+                        progress_tracker.cleanup_session(session_id)
+                        shutil.rmtree(output_dir, ignore_errors=True)
+                        
+                        return send_file(
+                            file_data,
+                            as_attachment=True,
+                            download_name=f"conversion.{ext}",
+                            mimetype='application/octet-stream'
+                        )
     
     return {'error': 'No output file found'}, 500
 

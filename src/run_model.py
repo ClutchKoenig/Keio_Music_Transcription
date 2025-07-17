@@ -94,9 +94,11 @@ def process_audio(audio_file, output_path, format, session_id=None):
     if session_id:
         progress_tracker.update_progress(session_id, 85, "Generating score from MIDI...")
 
-    # TODO: Generate score from MIDI and save in `score_dir`
-    # post_proc.midi_treatment(os.path.join(midi_dir, "combined.mid"), score_dir)
-    post_proc.multi_midi_treatment(midis, score_dir)    
+    # Generate score from MIDI and save in `score_dir`
+    # Always generate PDF for 'both' format, or when specifically requested
+    if format in ['pdf', 'both']:
+        post_proc.multi_midi_treatment(midis, score_dir)
+    
     if session_id:
         progress_tracker.complete_session(session_id)
 
@@ -107,7 +109,7 @@ if __name__=='__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('input', type=str, help='Path to the input audio file')
     parser.add_argument('--output', type=str, required=False, default='output/')
-    parser.add_argument('--format', type=str, choices=['midi', 'pdf'], required=False, default='midi')
+    parser.add_argument('--format', type=str, choices=['midi', 'pdf', 'both'], required=False, default='midi')
     args = parser.parse_args()
 
     process_audio(args.input, args.output, args.format)
