@@ -11,6 +11,8 @@ lottie.loadAnimation({
 const uploadArea = document.getElementById('uploadArea');
 const audioFileInput = document.getElementById('audioFile');
 const convertBtn = document.getElementById('convertBtn');
+const convertText = document.getElementById('convertText');
+const convertSpinner = document.getElementById('convertSpinner');
 const fileNameSpan = document.getElementById('fileName');
 const progressSection = document.getElementById('progressSection');
 const progressBar = document.getElementById('progressBar');
@@ -60,7 +62,9 @@ convertBtn.addEventListener('click', async () => {
     formData.append('audio', file);
     formData.append('format', format);
 
-    // Disable button during processing
+    // Show loading state and disable button
+    convertText.classList.add('hidden');
+    convertSpinner.classList.remove('hidden');
     convertBtn.disabled = true;
 
     try {
@@ -173,6 +177,8 @@ async function downloadFile(sessionId, format) {
 }
 
 function resetUI() {
+    convertText.classList.remove('hidden');
+    convertSpinner.classList.add('hidden');
     convertBtn.disabled = false;
     convertBtn.classList.remove('hidden');
     progressSection.classList.add('hidden');
