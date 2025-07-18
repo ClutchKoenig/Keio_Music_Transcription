@@ -18,7 +18,7 @@ const progressSection = document.getElementById('progressSection');
 const progressBar = document.getElementById('progressBar');
 const progressPercent = document.getElementById('progressPercent');
 const progressStep = document.getElementById('progressStep');
-
+const youtubeUrlInput = document.getElementById('youtubeUrl');
 // Drag & drop
 uploadArea.addEventListener('dragover', (e) => {
     e.preventDefault();
@@ -52,15 +52,23 @@ audioFileInput.addEventListener('change', () => {
 // Conversion
 convertBtn.addEventListener('click', async () => {
     const file = audioFileInput.files[0];
-    if (!file) {
-        alert('Please select an audio file.');
-        return;
-    }
-
+    const youtubeUrl = document.getElementById('youtubeUrl')?.value?.trim();
     const format = document.querySelector('input[name="output"]:checked').value;
     const formData = new FormData();
-    formData.append('audio', file);
+
+    if (file) {
+        formData.append('audio', file);
+    } else if (youtubeUrl) {
+        formData.append('youtube_url', youtubeUrl);
+    } else {
+        alert('Please select an audio file or enter a YouTube link.');
+        return;
+    }
     formData.append('format', format);
+    // const format = document.querySelector('input[name="output"]:checked').value;
+    // const formData = new FormData();
+    // formData.append('audio', file);
+    // formData.append('format', format);
 
     // Show loading state and disable button
     convertText.classList.add('hidden');

@@ -17,22 +17,35 @@ def add_ngrok_header(response):
 @app.route('/convert', methods=['POST'])
 def convert():
     file = request.files.get('audio')
+    youtube_url = request.form.get('youtube_url')
     format = request.form.get('format')  # 'midi', 'pdf', or 'both'
 
-    if not file:
-        return {'error': 'No file uploaded'}, 400
-
-    # Extract original filename without extension
-    original_filename = os.path.splitext(file.filename)[0] if file.filename else "converted"
+    if not file and not youtube_url:
+        return {'error': 'No file uploaded or YouTube link provided'}, 400
 
     # Generate unique session ID for progress tracking
     session_id = str(uuid.uuid4())
-    
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp_input:
-        file.save(tmp_input.name)
-        input_path = tmp_input.name
-
     output_dir = tempfile.mkdtemp()
+
+    if file:
+        # Handle uploaded audio file
+        original_filename = os.path.splitext(file.filename)[0] if file.filename else "converted"
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp_input:
+            file.save(tmp_input.name)
+            input_path = tmp_input.name
+    elif youtube_url:
+        # Handle YouTube link download
+        original_filename = "youtube_audio"
+        input_path = os.path.join(output_dir, "input.wav")
+        try:
+            subprocess.run([
+                "yt-dlp",
+                "-x", "--audio-format", "wav","--no-playlist",
+                "--output", input_path,
+                youtube_url
+            ], check=True)
+        except subprocess.CalledProcessError as e:
+            return {'error': f'Failed to download from YouTube: {e}'}, 500
 
     def process_in_background():
         try:
@@ -40,10 +53,9 @@ def convert():
         except Exception as e:
             progress_tracker.error_session(session_id, str(e))
         finally:
-            # Cleanup will be handled by the progress endpoint
-            pass
+            pass  # Cleanup is handled later
 
-    # Start processing in background
+    # Start background thread
     thread = threading.Thread(target=process_in_background)
     thread.start()
 
