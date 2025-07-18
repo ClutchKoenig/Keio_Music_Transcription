@@ -106,7 +106,13 @@ convertBtn.addEventListener('click', async () => {
         resetUI();
     }
 });
-
+youtubeUrlInput.addEventListener('input', () => {
+    if (youtubeUrlInput.value.trim() !== '') {
+        // Clear file input if a YouTube URL is being used
+        audioFileInput.value = null;
+        fileNameSpan.textContent = '';
+    }
+});
 function listenForProgress(sessionId, format) {
     const eventSource = new EventSource(`/progress/${sessionId}`);
     
